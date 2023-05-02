@@ -6,7 +6,7 @@ import cv2
 import io
 import layoutparser as lp
 import pdf2image
-from reaction_model.predict_bbox import ReactionModel
+from .reaction_model.predict_bbox import ReactionModel
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe
