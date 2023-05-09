@@ -34,7 +34,6 @@ def clean_bbox_output(figures, bboxes):
         mol_bboxes = [elt['bbox'] for elt in output if elt['category'] == '[Mol]']
         mol_scores = [elt['score'] for elt in output if elt['category'] == '[Mol]']
         unique_bboxes = []
-        scores = []
         data = {}
         results.append(data)
         data['image'] = figures[i]

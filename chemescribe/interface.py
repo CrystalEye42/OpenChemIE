@@ -66,7 +66,7 @@ class ChemEScribe:
                 ckpt_path = hf_hub_download("wang7776/reaction_pix2seq", "best.ckpt")
             else:
                 ckpt_path = self.moldet_ckpt
-        return ReactionModel(ckpt_path, device=torch.device(self.device))
+        return ReactionModel(ckpt_path)
 
     def extract_mol_info_from_pdf(self, pdf, batch_size=16, num_pages=None):
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
