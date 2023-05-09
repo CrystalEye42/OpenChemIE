@@ -28,6 +28,8 @@ def is_unique_bbox(bbox, bboxes):
 
 def clean_bbox_output(figures, bboxes):
     results = []
+    cropped = []
+    references = []
     for i, output in enumerate(bboxes):
         mol_bboxes = [elt['bbox'] for elt in output if elt['category'] == '[Mol]']
         mol_scores = [elt['score'] for elt in output if elt['category'] == '[Mol]']
@@ -36,10 +38,20 @@ def clean_bbox_output(figures, bboxes):
         data = {}
         results.append(data)
         data['image'] = figures[i]
-        data['mol_bboxes'] = unique_bboxes 
-        data['mol_scores'] = scores
+        data['molecules'] = []
         for bbox, score in zip(mol_bboxes, mol_scores):
             if is_unique_bbox(bbox, unique_bboxes):
                 unique_bboxes.append(bbox)
-                scores.append(score)
+                x1, y1, x2, y2 = bbox
+                height, width, _ = figures[i].shape
+                cropped_img = figures[i][int(y1*height):int(y2*height),int(x1*width):int(x2*width)]
+                cur_mol = {
+                    'bbox': bbox,
+                    'score': score,
+                    #'image': cropped_img,
+                    'info': None,
+                }
+                cropped.append(cropped_img)
+                references.append(cur_mol)
+    return results, cropped, references
     
