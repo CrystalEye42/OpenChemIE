@@ -96,9 +96,12 @@ class ReactionModel:
             model.cuda()
         self.model = model
 
-    def predict(self, image_path_array):
-        images = [Image.open(image_path).convert("RGB") for image_path in image_path_array]
-        return self.model.predict(images)
+    def predict(self, images, batch_size=16):
+        results = []
+        for i in range(0, len(images), batch_size):
+            batch = images[i:min(len(images), i+batch_size)]
+            results.extend(self.model.predict(batch))
+        return results
     
 
 if __name__ == "__main__":
