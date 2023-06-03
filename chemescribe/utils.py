@@ -54,3 +54,14 @@ def clean_bbox_output(figures, bboxes):
                 references.append(cur_mol)
     return results, cropped, references
     
+def convert_to_pil(image):
+    if type(image) == np.ndarray:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = Image.fromarray(image)
+    return image
+
+
+def convert_to_cv2(image):
+    if type(image) != np.ndarray:
+        image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+    return image

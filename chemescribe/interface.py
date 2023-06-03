@@ -2,6 +2,7 @@ import torch
 from functools import lru_cache
 import layoutparser as lp
 import pdf2image
+from PIL import Image
 from .reaction_model.predict_bbox import ReactionModel
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
@@ -88,6 +89,7 @@ class ChemEScribe:
         return get_figures_from_pages(pages, pdfparser)
 
     def extract_mol_bboxes_from_figures(self, figures, batch_size=16):
+        figures = [Image.fromarray(figure) for figure in figures]
         moldet = self.init_moldet()
         return moldet.predict(figures, batch_size=batch_size)
 
@@ -106,14 +108,15 @@ class ChemEScribe:
 
 
     def extract_rxn_info_from_figures(self, figures, batch_size=16):
+        pil_figures = convert_to_pil(results)
         rxnscribe = self.init_rxnscribe()
         results = []
-        reactions = rxnscribe.predict_images(figures, molscribe=True, ocr=False)
+        reactions = rxnscribe.predict_images(pil_figures, molscribe=True, ocr=False)
         for figure, rxn in zip(figures, reactions):
             data = {
                 'figure': figure,
                 'reactions': rxn,
-            }
+                }
             results.append(data)
         return results
         
