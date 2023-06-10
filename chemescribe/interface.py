@@ -95,7 +95,7 @@ class ChemEScribe:
         molscribe = self.init_molscribe()
         mol_info = molscribe.predict_images(cropped_images, batch_size=batch_size)
         for info, ref in zip(mol_info, refs):
-            ref['info'] = info
+            ref.update(info)
         return results
     
     def extract_rxn_info_from_pdf(self, pdf, batch_size=16, num_pages=None):

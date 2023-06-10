@@ -51,9 +51,10 @@ def clean_bbox_output(figures, bboxes):
                     'bbox': bbox,
                     'score': score,
                     #'image': cropped_img,
-                    'info': None,
+                    #'info': None,
                 }
                 cropped.append(cropped_img)
+                data['molecules'].append(cur_mol)
                 references.append(cur_mol)
     return results, cropped, references
     
