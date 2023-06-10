@@ -6,8 +6,8 @@ from PIL import Image
 from .reaction_model.predict_bbox import ReactionModel
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
-from rxnscribe import RxnScribe
-from .utils import clean_bbox_output, get_figures_from_pages
+from rxnscribe import RxnScribe, MolDetect
+from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
 class ChemEScribe:
     def __init__(self, device=None, molscribe_ckpt=None, rxnscribe_ckpt=None, 
@@ -32,7 +32,6 @@ class ChemEScribe:
     @lru_cache(maxsize=None)
     def init_molscribe(self, ckpt_path=None):
         if ckpt_path is None:
-            print("init molscribe")
             if self.molscribe_ckpt is None:
                 ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
             else:
@@ -42,7 +41,6 @@ class ChemEScribe:
     @lru_cache(maxsize=None)
     def init_rxnscribe(self, ckpt_path=None):
         if ckpt_path is None:
-            print("init rxnscripe")
             if self.rxnscribe_ckpt is None:
                 ckpt_path = hf_hub_download("yujieq/RxnScribe", "pix2seq_reaction_full.ckpt")
             else:
@@ -52,7 +50,6 @@ class ChemEScribe:
     @lru_cache(maxsize=None)
     def init_pdfparser(self, ckpt_path=None):
         if ckpt_path is None:
-            print("init pdfparser")
             if self.pdfparser_ckpt is None:
                 ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
             else:
@@ -62,20 +59,18 @@ class ChemEScribe:
     @lru_cache(maxsize=None)
     def init_moldet(self, ckpt_path=None):
         if ckpt_path is None:
-            print("init moldet")
             if self.moldet_ckpt is None:
-                ckpt_path = hf_hub_download("wang7776/reaction_pix2seq", "best.ckpt")
+                ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
             else:
                 ckpt_path = self.moldet_ckpt
-        return ReactionModel(ckpt_path)
+        return MolDetect(ckpt_path)
 
     def extract_mol_info_from_pdf(self, pdf, batch_size=16, num_pages=None):
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
         images = [figure['image'] for figure in figures]
         results = self.extract_mol_info_from_figures(images, batch_size=batch_size)
-        for data in results:
-            print(data.keys())
-            # clean the output
+        for figure, result in zip(figures, results):
+            result['page'] = figure['page']
         return results
     
     def extract_figures_from_pdf(self, pdf, num_pages):
@@ -89,12 +84,13 @@ class ChemEScribe:
         return get_figures_from_pages(pages, pdfparser)
 
     def extract_mol_bboxes_from_figures(self, figures, batch_size=16):
-        figures = [Image.fromarray(figure) for figure in figures]
+        figures = [convert_to_pil(figure) for figure in figures]
         moldet = self.init_moldet()
-        return moldet.predict(figures, batch_size=batch_size)
+        return moldet.predict_images(figures, batch_size=batch_size)
 
     def extract_mol_info_from_figures(self, figures, batch_size=16):
         bboxes = self.extract_mol_bboxes_from_figures(figures, batch_size=batch_size)
+        figures = [convert_to_cv2(figure) for figure in figures]
         results, cropped_images, refs = clean_bbox_output(figures, bboxes)
         molscribe = self.init_molscribe()
         mol_info = molscribe.predict_images(cropped_images, batch_size=batch_size)
@@ -104,11 +100,15 @@ class ChemEScribe:
     
     def extract_rxn_info_from_pdf(self, pdf, batch_size=16, num_pages=None):
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
-        return self.extract_rxn_info_from_figures(figures, batch_size=batch_size)
+        images = [figure['image'] for figure in figures]
+        results = self.extract_rxn_info_from_figures(images, batch_size=batch_size)
+        for figure, result in zip(figures, results):
+            result['page'] = figure['page']
+        return results
 
 
     def extract_rxn_info_from_figures(self, figures, batch_size=16):
-        pil_figures = convert_to_pil(results)
+        pil_figures = [convert_to_pil(figure) for figure in figures]
         rxnscribe = self.init_rxnscribe()
         results = []
         reactions = rxnscribe.predict_images(pil_figures, molscribe=True, ocr=False)
@@ -124,6 +124,3 @@ class ChemEScribe:
 
 if __name__=="__main__":
     chemescribe = ChemEScribe()
-    pdf_path = '/Mounts/rbg-storage1/users/urop/wang7776/ChemInfoExtractor/frontend/public/example1.pdf'
-    print(chemescribe.predict_pdf(pdf_path))
-    print(chemescribe.predict_pdf(pdf_path, reaction=True))

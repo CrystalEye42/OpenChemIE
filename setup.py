@@ -16,11 +16,11 @@ setup(
             "layoutparser[effdet]",
             "pdf2image",
             "opencv-python==4.5.5.64",
-            "RxnScribe @ git+https://github.com/thomas0809/RxnScribe.git@main#egg=RxnScribe",
-            "MolScribe @ git+https://github.com/thomas0809/MolScribe.git@main#egg=MolScribe",
+            "RxnScribe @ git+https://github.com/Ozymandias314/MolDetect.git",
+            "MolScribe @ git+https://github.com/thomas0809/MolScribe.git@main#egg=MolScribe"
             ],
         dependency_links=[
-            "git+https://github.com/thomas0809/RxnScribe.git@main#egg=RxnScribe",
+            "git+https://github.com/Ozymandias314/MolDetect.git",
             "git+https://github.com/thomas0809/MolScribe.git@main#egg=MolScribe"
         ])
 

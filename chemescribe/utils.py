@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import cv2
 import layoutparser as lp
 
 def get_figures_from_pages(pages, pdfparser):
@@ -10,8 +11,10 @@ def get_figures_from_pages(pages, pdfparser):
         blocks = lp.Layout([b for b in layout if b.type in ["Figure", "Table"]])
         for block in blocks:
             figure = Image.fromarray(block.crop_image(img))
-            print(block)
-            figures.append({'image': figure})  # add other metadata?
+            figures.append({
+                'image': figure,
+                'page': i
+            })
     return figures
 
 def get_overlap(bbox1, bbox2):
