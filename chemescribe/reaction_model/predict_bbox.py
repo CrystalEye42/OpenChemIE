@@ -85,12 +85,15 @@ class ReactionExtractorPix2Seq(LightningModule):
 
 
 class ReactionModel:
-    def __init__(self):
+    def __init__(self, ckpt_path=None):
         args = get_args()
         tokenizer = BboxTokenizer(input_size=2000, sep_xy=False, pix2seq=True, rand_target=False)
-
-        model = ReactionExtractorPix2Seq.load_from_checkpoint(
-            os.path.join(args.save_path, 'checkpoints/best.ckpt'), strict=False, args=args, tokenizer=tokenizer)
+        if ckpt_path is None:
+            model = ReactionExtractorPix2Seq.load_from_checkpoint(
+                os.path.join(args.save_path, 'checkpoints/best.ckpt'), 
+                strict=False, args=args, tokenizer=tokenizer)
+        else:
+            model = ReactionExtractorPix2Seq.load_from_checkpoint(ckpt_path, strict=False, args=args, tokenizer=tokenizer)
         model.eval()
         if torch.cuda.is_available():
             model.cuda()
