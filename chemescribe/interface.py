@@ -74,6 +74,7 @@ class ChemEScribe:
                         {   # first molecule
                             'bbox': tuple in the form (x1, y1, x2, y2),
                             'score': float,
+                            'image': ndarray of cropped molecule image,
                             'smiles': str,
                             'molfile': str
                         },
@@ -156,6 +157,7 @@ class ChemEScribe:
                         {   # first molecule
                             'bbox': tuple in the form (x1, y1, x2, y2),
                             'score': float,
+                            'image': ndarray of cropped molecule image,
                             'smiles': str,
                             'molfile': str
                         },

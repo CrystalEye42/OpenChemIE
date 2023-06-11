@@ -50,7 +50,7 @@ def clean_bbox_output(figures, bboxes):
                 cur_mol = {
                     'bbox': bbox,
                     'score': score,
-                    #'image': cropped_img,
+                    'image': cropped_img,
                     #'info': None,
                 }
                 cropped.append(cropped_img)
