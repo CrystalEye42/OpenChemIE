@@ -3,7 +3,6 @@ from functools import lru_cache
 import layoutparser as lp
 import pdf2image
 from PIL import Image
-from .reaction_model.predict_bbox import ReactionModel
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
