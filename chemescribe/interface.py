@@ -175,13 +175,15 @@ class ChemEScribe:
             ref.update(info)
         return results
     
-    def extract_rxn_info_from_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_rxn_info_from_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
         """
         Get reaction information from figures in pdf
         Parameters:
             pdf: path to pdf, or byte file
             batch_size: batch size for inference in all models
             num_pages: process only first `num_pages` pages, if `None` then process all
+            molscribe: whether to predict and return smiles and molfile info
+            ocr: whether to predict and return text of conditions
         Returns:
             list of figures and corresponding molecule info in the following format
             [
@@ -204,6 +206,7 @@ class ChemEScribe:
                                     'category': str,
                                     'bbox': tuple (x1,x2,y1,y2),
                                     'category_id': int,
+                                    'text': list of str,
                                 },
                                 # more conditions
                             ],
@@ -220,18 +223,20 @@ class ChemEScribe:
         """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
         images = [figure['image'] for figure in figures]
-        results = self.extract_rxn_info_from_figures(images, batch_size=batch_size)
+        results = self.extract_rxn_info_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
         return results
 
 
-    def extract_rxn_info_from_figures(self, figures, batch_size=16):
+    def extract_rxn_info_from_figures(self, figures, batch_size=16, molscribe=True, ocr=True):
         """
         Get reaction information from list of figures
         Parameters:
             figures: list of PIL or ndarray images
             batch_size: batch size for inference in all models
+            molscribe: whether to predict and return smiles and molfile info
+            ocr: whether to predict and return text of conditions
         Returns:
             list of figures and corresponding molecule info in the following format
             [
@@ -254,6 +259,7 @@ class ChemEScribe:
                                     'category': str,
                                     'bbox': tuple (x1,x2,y1,y2),
                                     'category_id': int,
+                                    'text': list of str,
                                 },
                                 # more conditions
                             ],
@@ -271,7 +277,7 @@ class ChemEScribe:
         pil_figures = [convert_to_pil(figure) for figure in figures]
         rxnscribe = self.init_rxnscribe()
         results = []
-        reactions = rxnscribe.predict_images(pil_figures, molscribe=True, ocr=False)
+        reactions = rxnscribe.predict_images(pil_figures, molscribe=molscribe, ocr=ocr)
         for figure, rxn in zip(figures, reactions):
             data = {
                 'figure': figure,
