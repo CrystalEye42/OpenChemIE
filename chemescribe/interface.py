@@ -102,31 +102,6 @@ class ChemEScribe:
             result['page'] = figure['page']
         return results
     
-    def extract_figures_from_pdf(self, pdf, num_pages=None):
-        """
-        Find and return all figures from a pdf
-        Parameters:
-            pdf: path to pdf, or byte file
-            num_pages: process only first `num_pages` pages, if `None` then process all
-        Returns:
-            list of figures in the following format
-            [
-                {   # first figure
-                    'image': PIL image of figure,
-                    'page': int
-                },
-                # more figures
-            ]
-        """
-        pdfparser = self.init_pdfparser()
-        pages = None
-        if type(pdf) == str:
-            pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
-        else:
-            pages = pdf2image.convert_from_bytes(pdf, last_page=num_pages)
-        
-        return get_figures_from_pages(pages, pdfparser)
-        
     def extract_figures_and_tables_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
         """
         Find and return all tables from a pdf page
