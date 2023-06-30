@@ -43,15 +43,12 @@ class ChemEScribe:
     
     @lru_cache(maxsize=None)
     def init_pdfparser(self, ckpt_path=None):
-        return lp.Detectron2LayoutModel('lp://PubLayNet/mask_rcnn_X_101_32x8d_FPN_3x/config', extra_config=["MODEL.ROI_HEADS.SCORE_THRESH_TEST", 0.5], label_map={0: "Text", 1: "Title", 2: "List", 3:"Table", 4:"Figure"})
-        """
         if ckpt_path is None:
             if self.pdfparser_ckpt is None:
                 ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
             else:
                 ckpt_path = self.pdfparser_ckpt
         return lp.AutoLayoutModel(ckpt_path, device=self.device)
-        """
     
     @lru_cache(maxsize=None)
     def init_moldet(self, ckpt_path=None):
