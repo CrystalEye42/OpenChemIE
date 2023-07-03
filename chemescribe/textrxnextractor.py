@@ -8,7 +8,7 @@ class TextReactionExtractor(object):
     def __init__(self, pdf, pn):
         self.pdf_file = pdf
         self.pages = pn
-        self.model_dir="cre_models_v0.1" # directory saving both prod and role models
+        self.model_dir="./training_modules/cre_models_v0.1" # directory saving both prod and role models
         self.rxn_extractor = RxnExtractor(self.model_dir)
         self.text_file = "info.txt"
         
@@ -128,39 +128,4 @@ class TextReactionExtractor(object):
         ans.update({'page' : page_number})
         ans.update({'reactions' : ret})
         return ans
-
-"""
-file_name = '/Users/Amber/Desktop/MIT/UROP/data/acs.joc.5b00099.pdf'
-test = TextReactionExtractor(file_name, None)
-print(test.extract_reactions_from_text())
-"""
-"""
-[
-    {'tokens':
-        ['Reaction', 'of', 'diphenylacetylene', 'with', 'complex', '19A', 'led', 'to', 'only', 'cycloheptadienone', '23A', 'in', '30%', 'yield.'],
-    'reactions':
-        [
-            {'Reactants':
-                [('diphenylacetylene', 2, 2), ('19A', 5, 5)],
-            'Product':
-                ('23A', 10, 10),
-            'Yield':
-                [('30%', 12, 12)]
-            }
-        ]
-    },
-    {'tokens':
-        ['Reaction', 'of', 'diphenylacetylene', 'with', '(phenylcyclopropyl)-carbene', 'complex', '19B,vcycloheptadienone', '25', 'was', 'produced', 'in', '53%', 'yield.'],
-    'reactions':
-        [
-            {'Reactants':
-                [('diphenylacetylene', 2, 2), ('(phenylcyclopropyl)-carbene complex', 4, 5), ('19B,vcycloheptadienone', 6, 6)],
-            'Product':
-                ('25', 7, 7),
-            'Yield': [('53%', 11, 11)]
-            }
-        ]
-    }
-]
-"""
 

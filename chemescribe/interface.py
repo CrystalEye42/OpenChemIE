@@ -60,6 +60,12 @@ class ChemEScribe:
         return MolDetect(ckpt_path)
         
     def init_textrxnextractor(self):
+        repo_id = "amberwang/chemrxnextractor-training-modules"
+        folder_path = "cre_models_v0.1"
+        file_names = ['prod/config.json', 'prod/pytorch_model.bin', 'prod/special_tokens_map.json', 'prod/tokenizer_config.json', 'prod/training_args.bin', 'prod/vocab.txt', 'role/added_tokens.json', 'role/config.json', 'role/pytorch_model.bin', 'role/special_tokens_map.json', 'role/tokenizer_config.json', 'role/training_args.bin', 'role/vocab.txt']
+        for file_name in file_names:
+            file_path = f"{folder_path}/{file_name}"
+            hf_hub_download(repo_id, file_path, local_dir='./training_modules')
         return TextReactionExtractor("", None)
         
     def init_tableextractor(self):
