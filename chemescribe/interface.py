@@ -6,8 +6,8 @@ from PIL import Image
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
-from textrxnextractor import TextReactionExtractor
-from tableextractor import TableExtractor
+from .textrxnextractor import TextReactionExtractor
+from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
 class ChemEScribe:
@@ -59,6 +59,7 @@ class ChemEScribe:
                 ckpt_path = self.moldet_ckpt
         return MolDetect(ckpt_path)
         
+    @lru_cache(maxsize=None)
     def init_textrxnextractor(self):
         repo_id = "amberwang/chemrxnextractor-training-modules"
         folder_path = "cre_models_v0.1"
@@ -98,7 +99,7 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages)
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_mol_info_from_figures(images, batch_size=batch_size)
         for figure, result in zip(figures, results):
@@ -143,7 +144,7 @@ class ChemEScribe:
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
         
-        if bbox_form == None:
+        if bbox_form is None:
             table_ext.set_output_bbox(False)
         else:
             table_ext.set_bbox_form(bbox_form)
@@ -254,7 +255,7 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages)
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_rxn_info_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
