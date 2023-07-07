@@ -98,8 +98,8 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
-        images = [figure['image'] for figure in figures]
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages)
+        images = [figure['figure']['image'] for figure in figures]
         results = self.extract_mol_info_from_figures(images, batch_size=batch_size)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
@@ -116,28 +116,23 @@ class ChemEScribe:
         Returns:
             list of content in the following format
             [
-                {   # first page
-                    'content': [
-                        { # first figure or table
-                            'title': str,
-                            'figure': {
-                                'image': PIL image or None,
-                                'bbox': list in form [x1, y1, x2, y2] or empty list,
-                            }
-                            'table': {
-                                'bbox': list in form [x1, y1, x2, y2] or empty list,
-                                'content': {
-                                    'columns': list of column headers,
-                                    'rows': list of list of row content,
-                                } or None
-                            }
-                            'footnote': str or empty,
-                        }
-                        # more figures and tables
-                    ]
+                { # first figure or table
+                    'title': str,
+                    'figure': {
+                        'image': PIL image or None,
+                        'bbox': list in form [x1, y1, x2, y2] or empty list,
+                    }
+                    'table': {
+                        'bbox': list in form [x1, y1, x2, y2] or empty list,
+                        'content': {
+                            'columns': list of column headers,
+                            'rows': list of list of row content,
+                        } or None
+                    }
+                    'footnote': str or empty,
                     'page': int
-                },
-                # more pages
+                }
+                # more figures and tables
             ]
         """
         pdfparser = self.init_pdfparser()
@@ -147,7 +142,8 @@ class ChemEScribe:
         table_ext = self.init_tableextractor()
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
-        if bbox_form != None:
+        
+        if bbox_form == None:
             table_ext.set_output_bbox(False)
         else:
             table_ext.set_bbox_form(bbox_form)
@@ -258,8 +254,8 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
-        images = [figure['image'] for figure in figures]
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages)
+        images = [figure['figure']['image'] for figure in figures]
         results = self.extract_rxn_info_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']

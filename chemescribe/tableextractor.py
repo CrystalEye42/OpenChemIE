@@ -256,7 +256,9 @@ class TableExtractor(object):
                 else: ret['figure']['bbox'] = list(coordinate)
             if self.bbox_form == 'ullr':
                 ret['table']['bbox'] = ullr_coord
-                
+            
+            ret.update({'page':self.page})
+            
             ans.append(ret)
             i += 1
         
@@ -290,6 +292,8 @@ class TableExtractor(object):
                 ret['figure']['bbox'] = ullr_coord
             else:
                 ret['figure']['bbox'] = list(coordinate)
+                
+            ret.update({'page':self.page})
             
             ans.append(ret)
         
@@ -298,15 +302,15 @@ class TableExtractor(object):
         
     def extract_all_tables_and_figures(self, pages, pdfparser):
         self.model = pdfparser
-        tables = []
+        ret = []
         for i in range(len(pages)):
             self.set_page_num(i)
             self.run_model(pages[i])
             table_info = self.extract_table_information()
             figure_info = self.extract_figure_information()
-            info = table_info + figure_info
-            tables.append({
-                'info': info,
-                'page': i
-            })
-        return tables
+            ret += table_info
+            ret += figure_info
+        return ret
+        
+        
+
