@@ -66,19 +66,14 @@ class TableExtractor(object):
         self.blocks.update({'list': list_blocks})
         self.blocks.update({'table': table_blocks})
         self.blocks.update({'figure': figure_blocks})
-        
-        
+    
     # type is what coordinates you want to get. it comes in text, title, list, table, and figure
-    def get_coordinates(self, type):
+    def convert_to_pdf_coordinates(self, type):
+        # scale coordinates
+        
         blocks = self.blocks[type]
-        new_blocks = [blocks[a].scale(self.pdf_dpi/self.image_dpi) for a in range(len(blocks))]
+        coordinates =  [blocks[a].scale(self.pdf_dpi/self.image_dpi) for a in range(len(blocks))]
         
-        return new_blocks
-    
-        
-    
-    # input: coordinates is a list of bounding boxes for all tables
-    def convert_to_pdf_coordinates(self, coordinates):
         reader = PdfReader(self.pdf_file)
 
         writer = PdfWriter()
@@ -229,9 +224,8 @@ class TableExtractor(object):
             
     def extract_table_information(self):
         #self.run_model(page_info) # changed
-        
-        table_coordinates = self.get_coordinates('table') #should return a list of layout objects
-        table_coordinates_in_pdf = self.convert_to_pdf_coordinates(table_coordinates) #should return a list of lists
+        table_coordinates = self.blocks['table'] #should return a list of layout objects
+        table_coordinates_in_pdf = self.convert_to_pdf_coordinates('table') #should return a list of lists
 
         ans = []
         i = 0
@@ -265,8 +259,8 @@ class TableExtractor(object):
         return ans
         
     def extract_figure_information(self):
-        figure_coordinates = self.get_coordinates('figure')
-        figure_coordinates_in_pdf = self.convert_to_pdf_coordinates(figure_coordinates)
+        figure_coordinates = self.blocks['figure']
+        figure_coordinates_in_pdf = self.convert_to_pdf_coordinates('figure')
         
         ans = []
         for i in range(len(figure_coordinates)):
@@ -311,6 +305,3 @@ class TableExtractor(object):
             ret += table_info
             ret += figure_info
         return ret
-        
-        
-
