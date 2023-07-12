@@ -6,6 +6,8 @@ from PIL import Image
 from huggingface_hub import hf_hub_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
+from .textrxnextractor import TextReactionExtractor
+from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
 class ChemEScribe:
@@ -56,6 +58,19 @@ class ChemEScribe:
             else:
                 ckpt_path = self.moldet_ckpt
         return MolDetect(ckpt_path)
+        
+    @lru_cache(maxsize=None)
+    def init_textrxnextractor(self):
+        repo_id = "amberwang/chemrxnextractor-training-modules"
+        folder_path = "cre_models_v0.1"
+        file_names = ['prod/config.json', 'prod/pytorch_model.bin', 'prod/special_tokens_map.json', 'prod/tokenizer_config.json', 'prod/training_args.bin', 'prod/vocab.txt', 'role/added_tokens.json', 'role/config.json', 'role/pytorch_model.bin', 'role/special_tokens_map.json', 'role/tokenizer_config.json', 'role/training_args.bin', 'role/vocab.txt']
+        for file_name in file_names:
+            file_path = f"{folder_path}/{file_name}"
+            hf_hub_download(repo_id, file_path, local_dir='./training_modules')
+        return TextReactionExtractor("", None)
+        
+    def init_tableextractor(self):
+        return TableExtractor()
 
     def extract_mol_info_from_pdf(self, pdf, batch_size=16, num_pages=None):
         """
@@ -84,38 +99,57 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
-        images = [figure['image'] for figure in figures]
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
+        images = [figure['figure']['image'] for figure in figures]
         results = self.extract_mol_info_from_figures(images, batch_size=batch_size)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
         return results
     
-    def extract_figures_from_pdf(self, pdf, num_pages=None):
+    def extract_figures_and_tables_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
         """
-        Find and return all figures from a pdf
+        Find and return all tables from a pdf page
         Parameters:
-            pdf: path to pdf, or byte file
-            num_pages: process only first `num_pages` pages, if `None` then process all
+            pdf: path to pdf
+            page: process only first `num_pages` pages, if `None` then process all
+            bbox_form: the structure of the bounding box. "llur" indicates that the four coordinates represent the bottom left and upper right. "ullr" indicates that the four coordinates represent the upper left and bottom right. None means bounding box should not be outputted. default is None
+            output_image: whether or not to include PIL image for figures. default is True
         Returns:
-            list of figures in the following format
+            list of content in the following format
             [
-                {   # first figure
-                    'image': PIL image of figure,
+                { # first figure or table
+                    'title': str,
+                    'figure': {
+                        'image': PIL image or None,
+                        'bbox': list in form [x1, y1, x2, y2] or empty list,
+                    }
+                    'table': {
+                        'bbox': list in form [x1, y1, x2, y2] or empty list,
+                        'content': {
+                            'columns': list of column headers,
+                            'rows': list of list of row content,
+                        } or None
+                    }
+                    'footnote': str or empty,
                     'page': int
-                },
-                # more figures
+                }
+                # more figures and tables
             ]
         """
         pdfparser = self.init_pdfparser()
         pages = None
-        if type(pdf) == str:
-            pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
-        else:
-            pages = pdf2image.convert_from_bytes(pdf, last_page=num_pages)
+        pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
+            
+        table_ext = self.init_tableextractor()
+        table_ext.set_pdf_file(pdf)
+        table_ext.set_output_image(output_image)
         
-        return get_figures_from_pages(pages, pdfparser)
-
+        if bbox_form is None:
+            table_ext.set_output_bbox(False)
+        else:
+            table_ext.set_bbox_form(bbox_form)
+        return table_ext.extract_all_tables_and_figures(pages, pdfparser)
+    
     def extract_mol_bboxes_from_figures(self, figures, batch_size=16):
         """
         Return bounding boxes of molecules in images
@@ -221,8 +255,8 @@ class ChemEScribe:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages) 
-        images = [figure['image'] for figure in figures]
+        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
+        images = [figure['figure']['image'] for figure in figures]
         results = self.extract_rxn_info_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
@@ -285,6 +319,43 @@ class ChemEScribe:
                 }
             results.append(data)
         return results
+        
+    def extract_rxn_info_from_pdf_text(self, pdf, num_pages=None):
+        """
+        Get reaction information from text in pdf
+        Parameters:
+            pdf: path to pdf
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of pages and corresponding reaction info in the following format
+            [
+                {
+                    'page': page number
+                    'reactions': [
+                        {
+                            'tokens': list of words in relevant sentence,
+                            'reactions' : [
+                                {
+                                    'Reactants': list of tuple,
+                                    'Products': list of tuple,
+                                    
+                                
+                                
+                                }
+                                # more reactions
+                            ]
+                        }
+                        # more reactions in other sentences
+                    ]
+                },
+                # more pages
+            ]
+        """
+        
+        text_rxn_extractor = self.init_textrxnextractor()
+        text_rxn_extractor.set_pdf_file(pdf)
+        text_rxn_extractor.set_pages(num_pages)
+        return text_rxn_extractor.extract_reactions_from_text()
         
 
 
