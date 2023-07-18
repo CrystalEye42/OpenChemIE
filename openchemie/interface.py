@@ -10,7 +10,7 @@ from .textrxnextractor import TextReactionExtractor
 from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
-class ChemEScribe:
+class OpenChemIE:
     def __init__(self, device=None, molscribe_ckpt=None, rxnscribe_ckpt=None, 
                  pdfparser_ckpt=None, moldet_ckpt=None):
         if device is None:
@@ -360,4 +360,4 @@ class ChemEScribe:
 
 
 if __name__=="__main__":
-    chemescribe = ChemEScribe()
+    model = OpenChemIE()
