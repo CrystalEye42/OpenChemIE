@@ -10,9 +10,7 @@ from .textrxnextractor import TextReactionExtractor
 from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
-
-class ChemEScribe:
-
+class OpenChemIE:
     def __init__(self, device=None):
         """
         Initialization function of OpenChemIE
@@ -377,5 +375,5 @@ class ChemEScribe:
         return chemrxnextractor.extract_reactions_from_text()
 
 
-if __name__ == "__main__":
-    chemescribe = ChemEScribe()
+if __name__=="__main__":
+    model = OpenChemIE()
