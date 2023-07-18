@@ -8,7 +8,7 @@ def get_figures_from_pages(pages, pdfparser):
     for i in range(len(pages)):
         img = np.asarray(pages[i])
         layout = pdfparser.detect(img)
-        blocks = lp.Layout([b for b in layout if b.type in ["Figure", "Table"]])
+        blocks = lp.Layout([b for b in layout if b.type == "Figure"])
         for block in blocks:
             figure = Image.fromarray(block.crop_image(img))
             figures.append({
