@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
 setup(
-        name='OpenChemIE',
+        name='ChemEScribe',
         version='0.1.0',
         author='Alex Wang',
         author_email='wang7776@mit.edu',
-        url='https://github.com/CrystalEye42/OpenChemIE',
+        url='https://github.com/CrystalEye42/ChemEScribe',
         packages=find_packages(),
-        package_dir={'openchemie': 'openchemie'},
+        package_dir={'chemescribe': 'chemescribe'},
         python_requires='>=3.7',
         install_requires=[
             "numpy",
