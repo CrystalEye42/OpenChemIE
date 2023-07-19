@@ -100,6 +100,8 @@ class TableExtractor(object):
                             
             elements = sorted(elements, key=itemgetter(0))
             w = sorted(elements, key=itemgetter(3), reverse=True)
+            if len(w) == 0:
+                continue
 
             ret = {}
             i = 1
