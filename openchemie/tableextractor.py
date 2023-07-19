@@ -27,6 +27,20 @@ class TableExtractor(object):
         self.model = None
         self.img = None
         self.output_image = True
+        self.tagging = {
+            'substance': ['compound', 'salt', 'base', 'solvent', 'CBr4', 'collidine', 'InX3', 'substrate', 'ligand', 'PPh3', 'PdL2', 'Cu', 'compd', 'reagent', 'reagant', 'acid', 'aldehyde', 'amine', 'Ln', 'X', 'H2O', 'enzyme', 'cofactor', 'oxidant', 'Pt(COD)Cl2', 'CuBr2', 'Ar', 'additive'],
+            'ratio': [':'],
+            'measurement': ['μM', 'nM', 'IC50', 'CI', 'excitation', 'emission', 'Φ', 'φ', 'shift', 'ee', 'ΔG', 'ΔH', 'TΔS', 'Δ', 'distance', 'trajectory', 'V', 'eV'],
+            'temperature': ['temp', 'temperature', 'T', '°C'],
+            'time': ['time', 't(', 't ('],
+            'result': ['yield', 'aa', 'result', 'product', 'conversion', '(%)'],
+            'alkyl group': ['R'],
+            'solvent': ['solvent'],
+            'counter': ['entry', 'no.'],
+            'catalyst': ['catalyst', 'cat.'],
+            'conditions': ['condition'],
+            'reactant': ['reactant'],
+        }
         
     def set_output_image(self, oi):
         self.output_image = oi
@@ -124,10 +138,23 @@ class TableExtractor(object):
                 temp_bbox = []
                 if self.bbox_form == 'ullr': temp_bbox = [t[0], t[3], t[2], t[1]]
                 else: temp_bbox = t[:4]
+                
+                column_text = t[4].strip()
+                tag = 'unknown'
+                tagged = False
+                for key in self.tagging.keys():
+                    for word in self.tagging[key]:
+                        if word in column_text:
+                            tag = key
+                            tagged = True
+                            break
+                    if tagged:
+                        break
+                
                 if self.output_bbox:
-                    ret["columns"].append({'text':t[4].strip(),'bbox':temp_bbox})
+                    ret["columns"].append({'text':column_text,'tag': tag, 'bbox':temp_bbox})
                 else:
-                    ret["columns"].append(t[4].strip())
+                    ret["columns"].append({'text':column_text,'tag': tag})
                 self.column_header_y = max(t[1], t[3])
             ret.update({"rows":[]})
 
@@ -294,7 +321,7 @@ class TableExtractor(object):
         return ans
             
         
-    def extract_all_tables_and_figures(self, pages, pdfparser):
+    def extract_all_tables_and_figures(self, pages, pdfparser, content=None):
         self.model = pdfparser
         ret = []
         for i in range(len(pages)):
@@ -302,6 +329,14 @@ class TableExtractor(object):
             self.run_model(pages[i])
             table_info = self.extract_table_information()
             figure_info = self.extract_figure_information()
-            ret += table_info
-            ret += figure_info
+            if content == 'tables':
+                ret += table_info
+            elif content == 'figures':
+                ret += figure_info
+                for table in table_info:
+                    if table['figure']['bbox'] != []:
+                        ret.append(table)
+            else:
+                ret += table_info
+                ret += figure_info
         return ret
