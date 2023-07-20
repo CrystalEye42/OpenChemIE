@@ -72,18 +72,14 @@ class OpenChemIE:
     def init_tableextractor(self):
         return TableExtractor()
 
-    def extract_figures_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
+    def extract_figures_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
         # TODO: I think it makes more sense to split the two functions. Basically the same as the previous function, but every element should have a figure. Remove those without a figure.
         """
         Find and return all figures from a pdf page
         Parameters:
             pdf: path to pdf
             num_pages: process only first `num_pages` pages, if `None` then process all
-            # TODO: why is it necessary to have two forms for the bboxes? and this is also not standard. usually it can be either xyxy or xywh.
-            bbox_form: the structure of the bounding box.
-                       "llur" indicates that the four coordinates represent the bottom left and upper right.
-                       "ullr" indicates that the four coordinates represent the upper left and bottom right.
-                       None means bounding box should not be outputted. default is None
+            output_bbox: whether to output bounding boxes for each individual entry of a table
             output_image: whether to include PIL image for figures. default is True
         Returns:
             list of content in the following format
@@ -114,24 +110,18 @@ class OpenChemIE:
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
 
-        if bbox_form is None:
-            table_ext.set_output_bbox(False)
-        else:
-            table_ext.set_bbox_form(bbox_form)
+        table_ext.set_output_bbox(output_bbox)
+        
         return table_ext.extract_all_tables_and_figures(pages, pdfparser, content='figures')
 
-    def extract_tables_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
+    def extract_tables_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
         # TODO: Similarly, this one returns all the tables, and the paired figure is optional. If there is a figure paired with a table, provide it.
         """
         Find and return all tables from a pdf page
         Parameters:
             pdf: path to pdf
             num_pages: process only first `num_pages` pages, if `None` then process all
-            # TODO: why is it necessary to have two forms for the bboxes? and this is also not standard. usually it can be either xyxy or xywh.
-            bbox_form: the structure of the bounding box.
-                       "llur" indicates that the four coordinates represent the bottom left and upper right.
-                       "ullr" indicates that the four coordinates represent the upper left and bottom right.
-                       None means bounding box should not be outputted. default is None
+            output_bbox: whether to include bboxes for individual entries of the table
             output_image: whether to include PIL image for figures. default is True
         Returns:
             list of content in the following format
@@ -162,10 +152,8 @@ class OpenChemIE:
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
 
-        if bbox_form is None:
-            table_ext.set_output_bbox(False)
-        else:
-            table_ext.set_bbox_form(bbox_form)
+        table_ext.set_output_bbox(output_bbox)
+        
         return table_ext.extract_all_tables_and_figures(pages, pdfparser, content='tables')
 
     def extract_molecules_from_pdf(self, pdf, batch_size=16, num_pages=None):
@@ -195,7 +183,7 @@ class OpenChemIE:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_molecules_from_figures(images, batch_size=batch_size)
         for figure, result in zip(figures, results):
@@ -311,7 +299,7 @@ class OpenChemIE:
                 # more figures
             ]
         """
-        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):

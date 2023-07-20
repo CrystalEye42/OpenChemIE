@@ -14,10 +14,9 @@ from operator import itemgetter
 
 # inputs: pdf_file, page #, bounding box (optional) (llur or ullr), output_bbox
 class TableExtractor(object):
-    def __init__(self, bbox_form="llur", output_bbox=True):
+    def __init__(self, output_bbox=True):
         self.pdf_file = ""
         self.page = ""
-        self.bbox_form = bbox_form
         self.image_dpi = 200
         self.pdf_dpi = 72
         self.output_bbox = output_bbox
@@ -44,11 +43,6 @@ class TableExtractor(object):
         
     def set_output_image(self, oi):
         self.output_image = oi
-        
-    def set_bbox_form(self, bf):
-        if bf != "llur" and bf != "ullr":
-            raise ValueError("This is not a valid bounding box form")
-        self.bbox_form = bf
     
     def set_pdf_file(self, pdf):
         self.pdf_file = pdf
@@ -135,9 +129,7 @@ class TableExtractor(object):
             
             ret.update({"columns":[]})
             for t in g:
-                temp_bbox = []
-                if self.bbox_form == 'ullr': temp_bbox = [t[0], t[3], t[2], t[1]]
-                else: temp_bbox = t[:4]
+                temp_bbox = t[:4]
                 
                 column_text = t[4].strip()
                 tag = 'unknown'
@@ -199,9 +191,7 @@ class TableExtractor(object):
                 
                 added_row = []
                 for t in group:
-                    temp_bbox = []
-                    if self.bbox_form == 'ullr': temp_bbox = [t[0], t[3], t[2], t[1]]
-                    else: temp_bbox = t[:4]
+                    temp_bbox = t[:4]
                     if self.output_bbox:
                         added_row.append({'text':t[4].strip(), 'bbox':temp_bbox})
                     else:
@@ -243,9 +233,7 @@ class TableExtractor(object):
                                 break
             self.title_y = min(title[1], title[3])
             if self.output_bbox:
-                if self.bbox_form == 'ullr':
-                    return ({'text': title[4], 'bbox': [title[0], title[3], title[2], title[1]]}, {'text': footnote[4], 'bbox': [footnote[0], footnote[3], footnote[2], footnote[1]]})
-                else: return ({'text': title[4], 'bbox': list(title[:4])}, {'text': footnote[4], 'bbox': list(footnote[:4])})
+                return ({'text': title[4], 'bbox': list(title[:4])}, {'text': footnote[4], 'bbox': list(footnote[:4])})
             else:
                 return (title[4], footnote[4])
             
@@ -273,10 +261,7 @@ class TableExtractor(object):
             ret.update({'table': {'bbox': list(coordinate), 'content': table_results}})
             ret.update({'footnote': tf[1]})
             if abs(self.title_y - self.column_header_y) > 50:
-                if self.bbox_form =='ullr': ret['figure']['bbox'] = ullr_coord
-                else: ret['figure']['bbox'] = list(coordinate)
-            if self.bbox_form == 'ullr':
-                ret['table']['bbox'] = ullr_coord
+                ret['figure']['bbox'] = list(coordinate)
             
             ret.update({'page':self.page})
             
@@ -309,10 +294,7 @@ class TableExtractor(object):
                 'content': None
                        }})
             ret.update({'footnote': tf[1]})
-            if self.bbox_form == 'ullr':
-                ret['figure']['bbox'] = ullr_coord
-            else:
-                ret['figure']['bbox'] = list(coordinate)
+            ret['figure']['bbox'] = list(coordinate)
                 
             ret.update({'page':self.page})
             
