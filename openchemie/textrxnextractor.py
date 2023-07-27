@@ -5,11 +5,12 @@ from operator import itemgetter
 from chemrxnextractor import RxnExtractor
 
 class TextReactionExtractor(object):
-    def __init__(self, pdf, pn):
+    def __init__(self, pdf, pn, device):
         self.pdf_file = pdf
         self.pages = pn
         self.model_dir="./training_modules/cre_models_v0.1" # directory saving both prod and role models
-        self.rxn_extractor = RxnExtractor(self.model_dir)
+        use_cuda = (device == 'cuda')
+        self.rxn_extractor = RxnExtractor(self.model_dir, use_cuda=use_cuda)
         self.text_file = "info.txt"
         
     def set_pdf_file(self, pdf):
