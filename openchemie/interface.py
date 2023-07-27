@@ -121,7 +121,29 @@ class OpenChemIE:
 
     def extract_figures_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
         # TODO: I think it makes more sense to split the two functions. Basically the same as the previous function, but every element should have a figure. Remove those without a figure.
-        pass
+        """
+        Find and return all figures from a pdf
+        Parameters:
+            pdf: path to pdf, or byte file
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of figures in the following format
+            [
+                {   # first figure
+                    'image': PIL image of figure,
+                    'page': int
+                },
+                # more figures
+            ]
+        """
+        pdfparser = self.init_pdfparser()
+        pages = None
+        if type(pdf) == str:
+            pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
+        else:
+            pages = pdf2image.convert_from_bytes(pdf, last_page=num_pages)
+        
+        return get_figures_from_pages(pages, pdfparser)
 
     def extract_tables_from_pdf(self, pdf, num_pages=None, bbox_form=None, output_image=True):
         # TODO: Similarly, this one returns all the tables, and the paired figure is optional. If there is a figure paired with a table, provide it.
@@ -154,8 +176,8 @@ class OpenChemIE:
                 # more figures
             ]
         """
-        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
-        images = [figure['figure']['image'] for figure in figures]
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages)
+        images = [figure['image'] for figure in figures]
         results = self.extract_molecules_from_figures(images, batch_size=batch_size)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
@@ -270,8 +292,8 @@ class OpenChemIE:
                 # more figures
             ]
         """
-        figures = self.extract_figures_and_tables_from_pdf(pdf, num_pages=num_pages, bbox_form="ullr")
-        images = [figure['figure']['image'] for figure in figures]
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages)
+        images = [figure['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
