@@ -45,7 +45,7 @@ class OpenChemIE:
     def init_moldet(self, ckpt_path=None):
         if ckpt_path is None:
             ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
-        return MolDetect(ckpt_path)
+        return MolDetect(ckpt_path, device=torch.device(self.device))
         
     @lru_cache(maxsize=None)
     def init_chemrxnextractor(self):
@@ -61,7 +61,7 @@ class OpenChemIE:
             file_path = f"{folder_path}/{file_name}"
             hf_hub_download(repo_id, file_path, local_dir='./training_modules')
         # TODO: maybe rename to ChemRxnExtractor
-        return TextReactionExtractor("", None)
+        return TextReactionExtractor("", None, self.device)
 
     @lru_cache(maxsize=None)
     def init_chemner(self):
