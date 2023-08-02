@@ -3,10 +3,10 @@ from functools import lru_cache
 import layoutparser as lp
 import pdf2image
 from PIL import Image
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, snapshot_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
-from .textrxnextractor import TextReactionExtractor
+from .chemrxnextractor import ChemRxnExtractor
 from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
 
@@ -26,7 +26,6 @@ class OpenChemIE:
     def init_molscribe(self, ckpt_path=None):
         if ckpt_path is None:
             ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
-        # TODO: why not just do `self.device = torch.device('cuda')` in __init__
         return MolScribe(ckpt_path, device=torch.device(self.device))
     
     @lru_cache(maxsize=None)
@@ -50,18 +49,8 @@ class OpenChemIE:
     @lru_cache(maxsize=None)
     def init_chemrxnextractor(self):
         repo_id = "amberwang/chemrxnextractor-training-modules"
-        folder_path = "cre_models_v0.1"
-        # TODO: I can live with this, but can you merge these into one file for download? Lower priority
-        file_names = ['prod/config.json', 'prod/pytorch_model.bin', 'prod/special_tokens_map.json',
-                      'prod/tokenizer_config.json', 'prod/training_args.bin', 'prod/vocab.txt',
-                      'role/added_tokens.json', 'role/config.json', 'role/pytorch_model.bin',
-                      'role/special_tokens_map.json', 'role/tokenizer_config.json', 'role/training_args.bin',
-                      'role/vocab.txt']
-        for file_name in file_names:
-            file_path = f"{folder_path}/{file_name}"
-            hf_hub_download(repo_id, file_path, local_dir='./training_modules')
-        # TODO: maybe rename to ChemRxnExtractor
-        return TextReactionExtractor("", None, self.device)
+        ckpt_path = hf_hub_download(repo_id=repo_id)
+        return ChemRxnExtractor("", None, ckpt_path, self.device)
 
     @lru_cache(maxsize=None)
     def init_chemner(self):
@@ -73,7 +62,6 @@ class OpenChemIE:
         return TableExtractor()
 
     def extract_figures_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
-        # TODO: I think it makes more sense to split the two functions. Basically the same as the previous function, but every element should have a figure. Remove those without a figure.
         """
         Find and return all figures from a pdf page
         Parameters:
@@ -115,7 +103,6 @@ class OpenChemIE:
         return table_ext.extract_all_tables_and_figures(pages, pdfparser, content='figures')
 
     def extract_tables_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
-        # TODO: Similarly, this one returns all the tables, and the paired figure is optional. If there is a figure paired with a table, provide it.
         """
         Find and return all tables from a pdf page
         Parameters:

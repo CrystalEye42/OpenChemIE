@@ -2,13 +2,14 @@ from PyPDF2 import PdfReader, PdfWriter
 import pdfminer.high_level
 import pdfminer.layout
 from operator import itemgetter
+import os
 from chemrxnextractor import RxnExtractor
 
-class TextReactionExtractor(object):
-    def __init__(self, pdf, pn, device):
+class ChemRxnExtractor(object):
+    def __init__(self, pdf, pn, model_dir, device):
         self.pdf_file = pdf
         self.pages = pn
-        self.model_dir="./training_modules/cre_models_v0.1" # directory saving both prod and role models
+        self.model_dir = os.path.join(model_dir, "cre_models_v0.1") # directory saving both prod and role models
         use_cuda = (device == 'cuda')
         self.rxn_extractor = RxnExtractor(self.model_dir, use_cuda=use_cuda)
         self.text_file = "info.txt"
