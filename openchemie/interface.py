@@ -14,52 +14,132 @@ class OpenChemIE:
     def __init__(self, device=None):
         """
         Initialization function of OpenChemIE
-        :param device:
-        TODO: every out-facing function should have a description
+        Parameters:
+            device: str of either cuda device name or 'cpu'
         """
         if device is None:
             self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         else:
             self.device = device
 
-    @lru_cache(maxsize=None)
-    def init_molscribe(self, ckpt_path=None):
-        if ckpt_path is None:
-            ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
-        return MolScribe(ckpt_path, device=torch.device(self.device))
-    
-    @lru_cache(maxsize=None)
-    def init_rxnscribe(self, ckpt_path=None):
-        if ckpt_path is None:
-            ckpt_path = hf_hub_download("yujieq/RxnScribe", "pix2seq_reaction_full.ckpt")
-        return RxnScribe(ckpt_path, device=torch.device(self.device))
-    
-    @lru_cache(maxsize=None)
-    def init_pdfparser(self, ckpt_path=None):
-        if ckpt_path is None:
-            ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
-        return lp.AutoLayoutModel(ckpt_path, device=self.device)
-    
-    @lru_cache(maxsize=None)
-    def init_moldet(self, ckpt_path=None):
-        if ckpt_path is None:
-            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
-        return MolDetect(ckpt_path, device=torch.device(self.device))
-        
-    @lru_cache(maxsize=None)
-    def init_chemrxnextractor(self):
-        repo_id = "amberwang/chemrxnextractor-training-modules"
-        ckpt_path = hf_hub_download(repo_id=repo_id)
-        return ChemRxnExtractor("", None, ckpt_path, self.device)
+        self._molscribe = None
+        self._rxnscribe = None
+        self._pdfparser = None
+        self._moldet = None
+        self._chemrxnextractor = None
+        self._chemner = None
+
+    @property
+    def molscribe(self):
+        if self._molscribe is None:
+            self.init_molscribe()
+        return self._molscribe
 
     @lru_cache(maxsize=None)
-    def init_chemner(self):
+    def init_molscribe(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
+        self._molscribe = MolScribe(ckpt_path, device=torch.device(self.device))
+    
+
+    @property
+    def rxnscribe(self):
+        if self._rxnscribe is None:
+            self.init_rxnscribe()
+        return self._rxnscribe
+
+    @lru_cache(maxsize=None)
+    def init_rxnscribe(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("yujieq/RxnScribe", "pix2seq_reaction_full.ckpt")
+        self._rxnscribe = RxnScribe(ckpt_path, device=torch.device(self.device))
+    
+
+    @property
+    def pdfparser(self):
+        if self._pdfparser is None:
+            self.init_pdfparser()
+        return self._pdfparser
+
+    @lru_cache(maxsize=None)
+    def init_pdfparser(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
+        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device)
+    
+
+    @property
+    def moldet(self):
+        if self._moldet is None:
+            self.init_moldet()
+        return self._moldet
+
+    @lru_cache(maxsize=None)
+    def init_moldet(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
+        self._moldet = MolDetect(ckpt_path, device=torch.device(self.device))
+        
+
+    @property
+    def chemrxnextractor(self):
+        if self._chemrxnextractor is None:
+            self.init_chemrxnextractor()
+        return self._chemrxnextractor
+
+    @lru_cache(maxsize=None)
+    def init_chemrxnextractor(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = snapshot_download(repo_id="amberwang/chemrxnextractor-training-modules")
+        self._chemrxnextractor = ChemRxnExtractor("", None, ckpt_path, self.device)
+
+
+    @property
+    def chemner(self):
+        if self._chemner is None:
+            self.init_chemner()
+        return self._chemner
+
+    @lru_cache(maxsize=None)
+    def init_chemner(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
         # TODO: ChemNER
         pass
 
-    @lru_cache(maxsize=None)
-    def init_tableextractor(self):
+    
+    @property
+    def tableextractor(self):
         return TableExtractor()
+
 
     def extract_figures_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
         """
@@ -91,16 +171,15 @@ class OpenChemIE:
                 # more figures
             ]
         """
-        pdfparser = self.init_pdfparser()
         pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
 
-        table_ext = self.init_tableextractor()
+        table_ext = self.tableextractor
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
 
         table_ext.set_output_bbox(output_bbox)
         
-        return table_ext.extract_all_tables_and_figures(pages, pdfparser, content='figures')
+        return table_ext.extract_all_tables_and_figures(pages, self.pdfparser, content='figures')
 
     def extract_tables_from_pdf(self, pdf, num_pages=None, output_bbox=False, output_image=True):
         """
@@ -132,16 +211,15 @@ class OpenChemIE:
                 # more tables
             ]
         """
-        pdfparser = self.init_pdfparser()
         pages = pdf2image.convert_from_path(pdf, last_page=num_pages)
 
-        table_ext = self.init_tableextractor()
+        table_ext = self.tableextractor
         table_ext.set_pdf_file(pdf)
         table_ext.set_output_image(output_image)
 
         table_ext.set_output_bbox(output_bbox)
         
-        return table_ext.extract_all_tables_and_figures(pages, pdfparser, content='tables')
+        return table_ext.extract_all_tables_and_figures(pages, self.pdfparser, content='tables')
 
     def extract_molecules_from_pdf(self, pdf, batch_size=16, num_pages=None):
         """
@@ -199,8 +277,7 @@ class OpenChemIE:
             ]
         """
         figures = [convert_to_pil(figure) for figure in figures]
-        moldet = self.init_moldet()
-        return moldet.predict_images(figures, batch_size=batch_size)
+        return self.moldet.predict_images(figures, batch_size=batch_size)
 
     def extract_molecules_from_figures(self, figures, batch_size=16):
         """
@@ -230,8 +307,7 @@ class OpenChemIE:
         bboxes = self.extract_molecule_bboxes_from_figures(figures, batch_size=batch_size)
         figures = [convert_to_cv2(figure) for figure in figures]
         results, cropped_images, refs = clean_bbox_output(figures, bboxes)
-        molscribe = self.init_molscribe()
-        mol_info = molscribe.predict_images(cropped_images, batch_size=batch_size)
+        mol_info = self.molscribe.predict_images(cropped_images, batch_size=batch_size)
         for info, ref in zip(mol_info, refs):
             ref.update(info)
         return results
@@ -339,9 +415,8 @@ class OpenChemIE:
 
         """
         pil_figures = [convert_to_pil(figure) for figure in figures]
-        rxnscribe = self.init_rxnscribe()
         results = []
-        reactions = rxnscribe.predict_images(pil_figures, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
+        reactions = self.rxnscribe.predict_images(pil_figures, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, rxn in zip(figures, reactions):
             data = {
                 'figure': figure,
@@ -385,10 +460,9 @@ class OpenChemIE:
                 # more pages
             ]
         """
-        chemrxnextractor = self.init_chemrxnextractor()
-        chemrxnextractor.set_pdf_file(pdf)
-        chemrxnextractor.set_pages(num_pages)
-        return chemrxnextractor.extract_reactions_from_text()
+        self.chemrxnextractor.set_pdf_file(pdf)
+        self.chemrxnextractor.set_pages(num_pages)
+        return self.chemrxnextractor.extract_reactions_from_text()
 
 
 if __name__=="__main__":
