@@ -42,8 +42,29 @@ class ChemRxnExtractor(object):
     
     def extract_all(self, pages):
         ans = []
+        text = self.get_sents_from_pdf(pages)
+        for data in text:
+            L = data['sents']
+            reactions = self.get_reactions(L, page_number=data['page'])
+            ans.append(reactions)
+        return ans
+    
+    def get_reactions(self, sents, page_number=None):
+        rxns = self.rxn_extractor.get_reactions(sents)
+        
+        ret = []
+        for r in rxns:
+            if len(r['reactions']) != 0: ret.append(r)
+        ans = {}
+        ans.update({'page' : page_number})
+        ans.update({'reactions' : ret})
+        return ans
+
+
+    def get_sents_from_pdf(self, pages):
         current_page_num = 1
         
+        result = []
         for page in range(pages):
             content = self.pdf_text[page]
             pg = content.split("\n\n")
@@ -74,22 +95,10 @@ class ChemRxnExtractor(object):
                         L.append(text[curind:i] + ".\n")
                     else:
                         L.append(text[curind:i] + "\n")
-            
-            reactions = self.get_reactions(L, page_number=current_page_num)
-            ans.append(reactions)
-            
-            current_page_num += 1
-        
-        return ans
-    
-    def get_reactions(self, sents, page_number=None):
-        rxns = self.rxn_extractor.get_reactions(sents)
-        
-        ret = []
-        for r in rxns:
-            if len(r['reactions']) != 0: ret.append(r)
-        ans = {}
-        ans.update({'page' : page_number})
-        ans.update({'reactions' : ret})
-        return ans
 
+            result.append({
+                'sents': L,
+                'page': current_page_num
+            }
+            current_page_num += 1
+        return result

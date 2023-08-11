@@ -426,9 +426,36 @@ class OpenChemIE:
             results.append(data)
         return results
 
-    def extract_named_entities_from_pdf_text(self, pdf, num_pages=None):
-        # TODO
-        pass
+    def extract_named_entities_from_pdf_text(self, pdf, batch_size=16, num_pages=None):
+        """
+        Get molecules in text of given pdf
+
+        Parameters:
+            pdf: path to pdf, or byte file
+            batch_size: batch size for inference in all models
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of sentences and found molecules in the following format
+            [
+                {
+                    'sentences': [[]]
+                    'predictions': [[str]]
+                    'page': int
+                },
+                # more pages
+            ]
+
+        """
+        self.chemrxnextractor.set_pdf_file(pdf)
+        self.chemrxnextractor.set_pages(num_pages)
+        text = self.chemrxnextractor.get_sents_from_pdf(num_pages)
+        result = []
+        for data in text:
+            output = self.chemner.predict_strings(data['sents'])
+            output['page'] = data['page']
+            result.append(output)
+        return result
+
 
     def extract_reactions_from_pdf_text(self, pdf, num_pages=None):
         """
