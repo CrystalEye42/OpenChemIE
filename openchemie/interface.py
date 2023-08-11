@@ -18,9 +18,9 @@ class OpenChemIE:
             device: str of either cuda device name or 'cpu'
         """
         if device is None:
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         else:
-            self.device = device
+            self.device = torch.device(device)
 
         self._molscribe = None
         self._rxnscribe = None
@@ -44,7 +44,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
-        self._molscribe = MolScribe(ckpt_path, device=torch.device(self.device))
+        self._molscribe = MolScribe(ckpt_path, device=self.device)
     
 
     @property
@@ -62,7 +62,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("yujieq/RxnScribe", "pix2seq_reaction_full.ckpt")
-        self._rxnscribe = RxnScribe(ckpt_path, device=torch.device(self.device))
+        self._rxnscribe = RxnScribe(ckpt_path, device=self.device)
     
 
     @property
@@ -80,7 +80,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
-        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device)
+        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device.type)
     
 
     @property
@@ -98,7 +98,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
-        self._moldet = MolDetect(ckpt_path, device=torch.device(self.device))
+        self._moldet = MolDetect(ckpt_path, device=self.device)
         
 
     @property
@@ -116,7 +116,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = snapshot_download(repo_id="amberwang/chemrxnextractor-training-modules")
-        self._chemrxnextractor = ChemRxnExtractor("", None, ckpt_path, self.device)
+        self._chemrxnextractor = ChemRxnExtractor("", None, ckpt_path, self.device.type)
 
 
     @property
@@ -132,8 +132,9 @@ class OpenChemIE:
         Parameters:
             ckpt_path: path to checkpoint to use, if None then will use default
         """
-        # TODO: ChemNER
-        pass
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("Ozymandias314/ChemNERckpt", "best.ckpt")
+        self._chemrxnextractor = ChemNER(ckpt_path, device=self.device.type)
 
     
     @property
