@@ -222,7 +222,7 @@ class OpenChemIE:
         
         return table_ext.extract_all_tables_and_figures(pages, self.pdfparser, content='tables')
 
-    def extract_molecules_from_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_molecules_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
         """
         Get all molecules and their information from a pdf
         Parameters:
@@ -313,11 +313,11 @@ class OpenChemIE:
             ref.update(info)
         return results
 
-    def extract_molecule_corefs_from_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
         # TODO
         pass
     
-    def extract_reactions_from_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
+    def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
         """
         Get reaction information from figures in pdf
         Parameters:
@@ -426,7 +426,7 @@ class OpenChemIE:
             results.append(data)
         return results
 
-    def extract_named_entities_from_pdf_text(self, pdf, batch_size=16, num_pages=None):
+    def extract_named_entities_from_text_in_pdf(self, pdf, batch_size=16, num_pages=None):
         """
         Get molecules in text of given pdf
 
@@ -451,13 +451,13 @@ class OpenChemIE:
         text = self.chemrxnextractor.get_sents_from_pdf(num_pages)
         result = []
         for data in text:
-            output = self.chemner.predict_strings(data['sents'])
+            output = self.chemner.predict_strings(data['sents'], batch_size=batch_size)
             output['page'] = data['page']
             result.append(output)
         return result
 
 
-    def extract_reactions_from_pdf_text(self, pdf, num_pages=None):
+    def extract_reactions_from_text_in_pdf(self, pdf, num_pages=None):
         """
         Get reaction information from text in pdf
         Parameters:
