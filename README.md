@@ -1,12 +1,21 @@
 # OpenChemIE
 
-This is a repository for aiding with chemistry information extraction by providing methods for easily using [RxnScribe](https://github.com/thomas0809/rxnscribe), [MolDetect](https://github.com/Ozymandias314/MolDetect), and [MolScribe](https://github.com/thomas0809/MolScribe) models. 
+This is a repository for aiding with chemistry information extraction by providing methods for easily using the [RxnScribe](https://github.com/thomas0809/rxnscribe), [MolDetect](https://github.com/Ozymandias314/MolDetect), [MolScribe](https://github.com/thomas0809/MolScribe), [ChemRxnExtractor](https://github.com/jiangfeng1124/ChemRxnExtractor), and [ChemNER](https://github.com/Ozymandias314/ChemIENER) models. 
 
 ## Installation
+(Optional but recommended.) First create and activate a virtual environment, such as by using [conda](https://numdifftools.readthedocs.io/en/stable/how-to/create_virtual_env_with_conda.html) or [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
+
 
 Run the following command to install the package and its dependencies
 ```
 python -m pip install 'OpenChemIE @ git+https://github.com/CrystalEye42/OpenChemIE'
+```
+
+Alternatively, install from cloned repository with the following commands
+```
+git clone https://github.com/CrystalEye42/OpenChemIE.git
+cd OpenChemIE
+python setup.py install
 ```
 
 ## Quick Start
