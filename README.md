@@ -1,6 +1,6 @@
 # OpenChemIE
 
-This is a repository for aiding with chemistry information extraction by providing methods for easily using the [RxnScribe](https://github.com/thomas0809/rxnscribe), [MolDetect](https://github.com/Ozymandias314/MolDetect), [MolScribe](https://github.com/thomas0809/MolScribe), [ChemRxnExtractor](https://github.com/jiangfeng1124/ChemRxnExtractor), and [ChemNER](https://github.com/Ozymandias314/ChemIENER) models. 
+This is a package for aiding with chemistry information extraction by providing methods for easily using the [RxnScribe](https://github.com/thomas0809/rxnscribe), [MolDetect](https://github.com/Ozymandias314/MolDetect), [MolScribe](https://github.com/thomas0809/MolScribe), [ChemRxnExtractor](https://github.com/jiangfeng1124/ChemRxnExtractor), and [ChemNER](https://github.com/Ozymandias314/ChemIENER) models. 
 
 ## Installation
 (Optional but recommended.) First create and activate a virtual environment, such as by using [conda](https://numdifftools.readthedocs.io/en/stable/how-to/create_virtual_env_with_conda.html) or [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
@@ -38,6 +38,7 @@ model = OpenChemIE(device=torch.device('cpu')) # change to cuda for gpu
  - [extract_molecule_corefs_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
  - [extract_figures_from_pdf](#extracting-figures-and-tables-from-pdfs)
  - [extract_tables_from_pdf](#extracting-figures-and-tables-from-pdfs)
+ - [init methods for models](#loading-custom-model-checkpoints)
 
 ### Extracting Molecule Information From PDFs
 
