@@ -27,7 +27,17 @@ from openchemie import OpenChemIE
 model = OpenChemIE(device=torch.device('cpu')) # change to cuda for gpu
 ```
 ### List of Methods
-[extract_molecules_from_figures](#the-output-format-when-extracting-molecules-from-images)
+ - [extract_molecules_from_figures_in_pdf](#extracting-molecule-information-from-pdfs)
+ - [extract_molecules_from_text_in_pdf](#extracting-molecule-information-from-pdfs)
+ - [extract_reactions_from_figures_in_pdf](#extracting-reaction-information-from-pdfs)
+ - [extract_reactions_from_text_in_pdf](#extracting-reaction-information-from-pdfs)
+ - [extract_molecule_corefs_from_figures_in_pdf](#extracting-molecule-corefs-from-pdfs)
+ - [extract_molecules_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_reactions_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_molecule_bboxes_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_molecule_corefs_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_figures_from_pdf](#extracting-figures-and-tables-from-pdfs)
+ - [extract_tables_from_pdf](#extracting-figures-and-tables-from-pdfs)
 
 ### Extracting Molecule Information From PDFs
 
@@ -204,8 +214,7 @@ bbox_results = model.extract_molecule_bboxes_from_figures(images)
 coref_results = model.extract_molecule_corefs_from_figures(images)
 ```
 
-#### The output format when extracting molecules from images
-
+The output format when extracting molecules from images
 ```
 [
     {   # first figure
@@ -360,15 +369,14 @@ Output format when extracting tables
 
 ### Loading custom model checkpoints
 List of different model names
-```
-molscribe
-rxnscribe
-pdfparser
-moldet
-chemrxnextractor
-chemner
-coref
-```
+ - molscribe
+ - rxnscribe
+ - pdfparser
+ - moldet
+ - chemrxnextractor
+ - chemner
+ - coref
+
 To load a specific checkpoint for a model, pass in your path to checkpoint to its init method. For example
 ```
 import torch
