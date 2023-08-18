@@ -6,6 +6,7 @@ from PIL import Image
 from huggingface_hub import hf_hub_download, snapshot_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
+from chemiener import ChemNER
 from .chemrxnextractor import ChemRxnExtractor
 from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
@@ -28,6 +29,7 @@ class OpenChemIE:
         self._moldet = None
         self._chemrxnextractor = None
         self._chemner = None
+        self._coref = None
 
     @property
     def molscribe(self):
@@ -102,6 +104,24 @@ class OpenChemIE:
         
 
     @property
+    def coref(self):
+        if self._coref is None:
+            self.init_coref()
+        return self._coref
+
+    @lru_cache(maxsize=None)
+    def init_coref(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "coref_best.ckpt")
+        self._coref = MolDetect(ckpt_path, device=self.device, coref=True)
+
+
+    @property
     def chemrxnextractor(self):
         if self._chemrxnextractor is None:
             self.init_chemrxnextractor()
@@ -134,7 +154,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("Ozymandias314/ChemNERckpt", "best.ckpt")
-        self._chemrxnextractor = ChemNER(ckpt_path, device=self.device.type)
+        self._chemner = ChemNER(ckpt_path, device=self.device)
 
     
     @property
@@ -314,8 +334,16 @@ class OpenChemIE:
         return results
 
     def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
-        # TODO
-        pass
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
+        images = [figure['figure']['image'] for figure in figures]
+        results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size)
+        for figure, result in zip(figures, results):
+            result['page'] = figure['page']
+        return results
+
+    def extract_molecule_corefs_from_figures(self, figures, batch_size=16):
+        figures = [convert_to_pil(figure) for figure in figures]
+        return self.coref.predict_images(figures, batch_size=batch_size, coref=True)
     
     def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
         """
@@ -426,7 +454,7 @@ class OpenChemIE:
             results.append(data)
         return results
 
-    def extract_named_entities_from_text_in_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_molecules_from_text_in_pdf(self, pdf, batch_size=16, num_pages=None):
         """
         Get molecules in text of given pdf
 

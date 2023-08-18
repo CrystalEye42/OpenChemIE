@@ -99,6 +99,6 @@ class ChemRxnExtractor(object):
             result.append({
                 'sents': L,
                 'page': current_page_num
-            }
+            })
             current_page_num += 1
         return result
