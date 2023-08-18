@@ -2,6 +2,8 @@
 
 This is a package for aiding with chemistry information extraction by providing methods for easily using the [RxnScribe](https://github.com/thomas0809/rxnscribe), [MolDetect](https://github.com/Ozymandias314/MolDetect), [MolScribe](https://github.com/thomas0809/MolScribe), [ChemRxnExtractor](https://github.com/jiangfeng1124/ChemRxnExtractor), and [ChemNER](https://github.com/Ozymandias314/ChemIENER) models. 
 
+## Citation
+
 ## Installation
 (Optional but recommended.) First create and activate a virtual environment, such as by using [conda](https://numdifftools.readthedocs.io/en/stable/how-to/create_virtual_env_with_conda.html) or [venv](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment).
 
@@ -42,13 +44,15 @@ model = OpenChemIE(device=torch.device('cpu')) # change to cuda for gpu
 
 ### Extracting Molecule Information From PDFs
 
-```
+```python
 import torch
 from openchemie import OpenChemIE
 
 model = OpenChemIE()
-pdf_path = 'path/to/pdf'
+pdf_path = 'example/acs.xxx.pdf'  # Change it to the path of your PDF
+# Figure analysis
 figure_results = model.extract_molecules_from_figures_in_pdf(pdf_path)
+# Text analysis
 text_results = model.extract_molecules_from_text_in_pdf(pdf_path)
 ```
 
@@ -139,6 +143,9 @@ The output when extracting reactions from figures has the following format
     # more figures
 ]
 ```
+visualization method (utility function)
+an example of the output
+
 Output when extracting reactions from text has the following format
 ```
 [
@@ -195,7 +202,15 @@ The output has the following format
 ]
 ```
 
-### Extracting Molecules, Reactions, Bounding Boxes, and Corefs From Images
+### Extracting From A List Of Figures
+
+xxxx
+
+ - [extract_molecules_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_reactions_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_molecule_bboxes_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+ - [extract_molecule_corefs_from_figures](#extracting-molecules-reactions-bounding-boxes-and-corefs-from-images)
+
 ```
 import torch
 from openchemie import OpenChemIE
@@ -369,20 +384,20 @@ Output format when extracting tables
 ```
 
 ### Loading custom model checkpoints
-List of different model names
- - molscribe
- - rxnscribe
- - pdfparser
- - moldet
- - chemrxnextractor
- - chemner
- - coref
-
-To load a specific checkpoint for a model, pass in your path to checkpoint to its init method. For example
+To load a specific checkpoint for a model, pass in your path to checkpoint to its init method. For example, to change the checkpoint of MolScribe
 ```
 import torch
 from openchemie import OpenChemIE
 
 model = OpenChemIE()
-model.init_molscribe('/path/to/ckpt')
+model.init_molscribe('/path/to/ckpt') # give a specific ckpt
 ```
+
+# Models In OpenChemIE
+- MolScribe
+  - An image-to-graph model for molecular structure recognition
+  - Paper: xxx
+  - Code: xxx
+  - Demo: xxx
+- RxnScribe
+  - An image-to-sequence ...
