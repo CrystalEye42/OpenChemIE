@@ -6,6 +6,7 @@ from PIL import Image
 from huggingface_hub import hf_hub_download, snapshot_download
 from molscribe import MolScribe
 from rxnscribe import RxnScribe, MolDetect
+from chemiener import ChemNER
 from .chemrxnextractor import ChemRxnExtractor
 from .tableextractor import TableExtractor
 from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
@@ -18,9 +19,9 @@ class OpenChemIE:
             device: str of either cuda device name or 'cpu'
         """
         if device is None:
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         else:
-            self.device = device
+            self.device = torch.device(device)
 
         self._molscribe = None
         self._rxnscribe = None
@@ -28,6 +29,7 @@ class OpenChemIE:
         self._moldet = None
         self._chemrxnextractor = None
         self._chemner = None
+        self._coref = None
 
     @property
     def molscribe(self):
@@ -44,7 +46,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("yujieq/MolScribe", "swin_base_char_aux_1m.pth")
-        self._molscribe = MolScribe(ckpt_path, device=torch.device(self.device))
+        self._molscribe = MolScribe(ckpt_path, device=self.device)
     
 
     @property
@@ -62,7 +64,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("yujieq/RxnScribe", "pix2seq_reaction_full.ckpt")
-        self._rxnscribe = RxnScribe(ckpt_path, device=torch.device(self.device))
+        self._rxnscribe = RxnScribe(ckpt_path, device=self.device)
     
 
     @property
@@ -80,7 +82,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
-        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device)
+        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device.type)
     
 
     @property
@@ -98,8 +100,26 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
-        self._moldet = MolDetect(ckpt_path, device=torch.device(self.device))
+        self._moldet = MolDetect(ckpt_path, device=self.device)
         
+
+    @property
+    def coref(self):
+        if self._coref is None:
+            self.init_coref()
+        return self._coref
+
+    @lru_cache(maxsize=None)
+    def init_coref(self, ckpt_path=None):
+        """
+        Set model to custom checkpoint
+        Parameters:
+            ckpt_path: path to checkpoint to use, if None then will use default
+        """
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "coref_best.ckpt")
+        self._coref = MolDetect(ckpt_path, device=self.device, coref=True)
+
 
     @property
     def chemrxnextractor(self):
@@ -116,7 +136,7 @@ class OpenChemIE:
         """
         if ckpt_path is None:
             ckpt_path = snapshot_download(repo_id="amberwang/chemrxnextractor-training-modules")
-        self._chemrxnextractor = ChemRxnExtractor("", None, ckpt_path, self.device)
+        self._chemrxnextractor = ChemRxnExtractor("", None, ckpt_path, self.device.type)
 
 
     @property
@@ -132,8 +152,9 @@ class OpenChemIE:
         Parameters:
             ckpt_path: path to checkpoint to use, if None then will use default
         """
-        # TODO: ChemNER
-        pass
+        if ckpt_path is None:
+            ckpt_path = hf_hub_download("Ozymandias314/ChemNERckpt", "best.ckpt")
+        self._chemner = ChemNER(ckpt_path, device=self.device)
 
     
     @property
@@ -221,7 +242,7 @@ class OpenChemIE:
         
         return table_ext.extract_all_tables_and_figures(pages, self.pdfparser, content='tables')
 
-    def extract_molecules_from_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_molecules_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
         """
         Get all molecules and their information from a pdf
         Parameters:
@@ -312,11 +333,19 @@ class OpenChemIE:
             ref.update(info)
         return results
 
-    def extract_molecule_corefs_from_pdf(self, pdf, batch_size=16, num_pages=None):
-        # TODO
-        pass
+    def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
+        images = [figure['figure']['image'] for figure in figures]
+        results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size)
+        for figure, result in zip(figures, results):
+            result['page'] = figure['page']
+        return results
+
+    def extract_molecule_corefs_from_figures(self, figures, batch_size=16):
+        figures = [convert_to_pil(figure) for figure in figures]
+        return self.coref.predict_images(figures, batch_size=batch_size, coref=True)
     
-    def extract_reactions_from_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
+    def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
         """
         Get reaction information from figures in pdf
         Parameters:
@@ -425,11 +454,38 @@ class OpenChemIE:
             results.append(data)
         return results
 
-    def extract_named_entities_from_pdf_text(self, pdf, num_pages=None):
-        # TODO
-        pass
+    def extract_molecules_from_text_in_pdf(self, pdf, batch_size=16, num_pages=None):
+        """
+        Get molecules in text of given pdf
 
-    def extract_reactions_from_pdf_text(self, pdf, num_pages=None):
+        Parameters:
+            pdf: path to pdf, or byte file
+            batch_size: batch size for inference in all models
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of sentences and found molecules in the following format
+            [
+                {
+                    'sentences': [[]]
+                    'predictions': [[str]]
+                    'page': int
+                },
+                # more pages
+            ]
+
+        """
+        self.chemrxnextractor.set_pdf_file(pdf)
+        self.chemrxnextractor.set_pages(num_pages)
+        text = self.chemrxnextractor.get_sents_from_pdf(num_pages)
+        result = []
+        for data in text:
+            output = self.chemner.predict_strings(data['sents'], batch_size=batch_size)
+            output['page'] = data['page']
+            result.append(output)
+        return result
+
+
+    def extract_reactions_from_text_in_pdf(self, pdf, num_pages=None):
         """
         Get reaction information from text in pdf
         Parameters:

@@ -16,11 +16,13 @@ setup(
             "layoutparser[effdet]",
             "pdf2image",
             "PyPDF2",
+            "pdftotext",
             "opencv-python==4.5.5.64",
             "opencv-python-headless==4.5.4.60",
             "Pillow==9.5.0",
             "RxnScribe @ git+https://github.com/Ozymandias314/MolDetect.git",
             "MolScribe @ git+https://github.com/thomas0809/MolScribe.git@main#egg=MolScribe",
+            "ChemIENER @ git+https://github.com/CrystalEye42/ChemIENER.git@f911231",
             "chemrxnextractor @ git+https://github.com/CrystalEye42/ChemRxnExtractor.git@0f9529d",
             ],
         dependency_links=[

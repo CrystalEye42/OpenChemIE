@@ -3,6 +3,7 @@ import pdfminer.high_level
 import pdfminer.layout
 from operator import itemgetter
 import os
+import pdftotext
 from chemrxnextractor import RxnExtractor
 
 class ChemRxnExtractor(object):
@@ -13,9 +14,15 @@ class ChemRxnExtractor(object):
         use_cuda = (device == 'cuda')
         self.rxn_extractor = RxnExtractor(self.model_dir, use_cuda=use_cuda)
         self.text_file = "info.txt"
+        self.pdf_text = ""
+        if len(self.pdf_file) > 0:
+            with open(self.pdf_file, "rb") as f:
+                self.pdf_text = pdftotext.PDF(f)
         
     def set_pdf_file(self, pdf):
         self.pdf_file = pdf
+        with open(self.pdf_file, "rb") as f:
+            self.pdf_text = pdftotext.PDF(f)
     
     def set_pages(self, pn):
         self.pages = pn
@@ -28,85 +35,18 @@ class ChemRxnExtractor(object):
         self.text_file = tf
     
     def extract_reactions_from_text(self):
-        if self.pages == None:
-            return self.extract_all_pages()
+        if self.pages is None:
+            return self.extract_all(len(self.pdf_text))
         else:
-            return self.extract_limited_pages()
+            return self.extract_all(self.pages)
     
-    def extract_all_pages(self):
+    def extract_all(self, pages):
         ans = []
-        current_page_num = 1
-        for page_layout in pdfminer.high_level.extract_pages(self.pdf_file):
-            L = []
-            for element in page_layout:
-                if isinstance(element, pdfminer.layout.LTTextBoxHorizontal):
-                    text = element.get_text()
-                    text = text.replace("\n", " ")
-                    text = text.replace("- ", "-")
-                    curind = 0
-                    i = 0
-                    while i < len(text):
-                        if text[i] == '.':
-                            if i != 0 and not text[i-1].isdigit() or i != len(text) - 1 and (text[i+1] == " " or text[i+1] == "\n"):
-                                L.append(text[curind:i+1])
-                                while(i < len(text) and text[i] != " "):
-                                    i += 1
-                                curind = i + 1
-                        i += 1
-                    if curind != i:
-                        if text[i - 1] == " ":
-                            if i != 1:
-                                i -= 1;
-                            else:
-                                break
-                        if text[i - 1] != '.':
-                            L.append(text[curind:i] + ".")
-                        else:
-                            L.append(text[curind:i])
-            
-            reactions = self.get_reactions(L, page_number=current_page_num)
+        text = self.get_sents_from_pdf(pages)
+        for data in text:
+            L = data['sents']
+            reactions = self.get_reactions(L, page_number=data['page'])
             ans.append(reactions)
-            
-            current_page_num += 1
-        
-        return ans
-            
-    def extract_limited_pages(self):
-        ans = []
-        current_page_num = 1
-        for page_layout in pdfminer.high_level.extract_pages(self.pdf_file, maxpages=self.pages):
-            L = []
-            for element in page_layout:
-                if isinstance(element, pdfminer.layout.LTTextBoxHorizontal):
-                    text = element.get_text()
-                    text = text.replace("\n", " ")
-                    text = text.replace("- ", "-")
-                    curind = 0
-                    i = 0
-                    while i < len(text):
-                        if text[i] == '.':
-                            if i != 0 and not text[i-1].isdigit() or i != len(text) - 1 and (text[i+1] == " " or text[i+1] == "\n"):
-                                L.append(text[curind:i+1])
-                                while(i < len(text) and text[i] != " "):
-                                    i += 1
-                                curind = i + 1
-                        i += 1
-                    if curind != i:
-                        if text[i - 1] == " ":
-                            if i != 1:
-                                i -= 1;
-                            else:
-                                break
-                        if text[i - 1] != '.':
-                            L.append(text[curind:i] + ".")
-                        else:
-                            L.append(text[curind:i])
-                            
-            reactions = self.get_reactions(L, page_number=current_page_num)
-            ans.append(reactions)
-            
-            current_page_num += 1
-        
         return ans
     
     def get_reactions(self, sents, page_number=None):
@@ -120,3 +60,45 @@ class ChemRxnExtractor(object):
         ans.update({'reactions' : ret})
         return ans
 
+
+    def get_sents_from_pdf(self, pages):
+        current_page_num = 1
+        
+        result = []
+        for page in range(pages):
+            content = self.pdf_text[page]
+            pg = content.split("\n\n")
+            L = []
+            for line in pg:
+                if '\x0c' in line:
+                    continue
+                text = line
+                text = text.replace("\n", " ")
+                text = text.replace("- ", "-")
+                curind = 0
+                i = 0
+                while i < len(text):
+                    if text[i] == '.':
+                        if i != 0 and not text[i-1].isdigit() or i != len(text) - 1 and (text[i+1] == " " or text[i+1] == "\n"):
+                            L.append(text[curind:i+1] + "\n")
+                            while(i < len(text) and text[i] != " "):
+                                i += 1
+                            curind = i + 1
+                    i += 1
+                if curind != i:
+                    if text[i - 1] == " ":
+                        if i != 1:
+                            i -= 1
+                        else:
+                            break
+                    if text[i - 1] != '.':
+                        L.append(text[curind:i] + ".\n")
+                    else:
+                        L.append(text[curind:i] + "\n")
+
+            result.append({
+                'sents': L,
+                'page': current_page_num
+            })
+            current_page_num += 1
+        return result
