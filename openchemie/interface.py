@@ -334,6 +334,35 @@ class OpenChemIE:
         return results
 
     def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
+        """
+        Get all molecule bboxes and corefs from figures in pdf
+        Parameters:
+            pdf: path to pdf, or byte file
+            batch_size: batch size for inference in all models
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of results for each figure in the following format:
+            [
+                {
+                    'bboxes': [
+                        {   # first bbox
+                            'category': '[Sup]', 
+                            'bbox': (0.0050025012506253125, 0.38273870663142223, 0.9934967483741871, 0.9450094869920168), 
+                            'category_id': 4, 
+                            'score': -0.07593922317028046
+                        },
+                        # More bounding boxes
+                    ],
+                    'coref': [
+                        [0, 1],
+                        [3, 4],
+                        # More coref pairs
+                    ],
+                    'page': int
+                },
+                # More figures
+            ]
+        """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size)
@@ -342,6 +371,33 @@ class OpenChemIE:
         return results
 
     def extract_molecule_corefs_from_figures(self, figures, batch_size=16):
+        """
+        Get all molecule bboxes and corefs from list of figures
+        Parameters:
+            figures: list of PIL or ndarray images
+            batch_size: batch size for inference
+        Returns:
+            list of results for each figure in the following format:
+            [
+                {
+                    'bboxes': [
+                        {   # first bbox
+                            'category': '[Sup]', 
+                            'bbox': (0.0050025012506253125, 0.38273870663142223, 0.9934967483741871, 0.9450094869920168), 
+                            'category_id': 4, 
+                            'score': -0.07593922317028046
+                        },
+                        # More bounding boxes
+                    ],
+                    'coref': [
+                        [0, 1],
+                        [3, 4],
+                        # More coref pairs
+                    ],
+                },
+                # More figures
+            ]
+        """
         figures = [convert_to_pil(figure) for figure in figures]
         return self.coref.predict_images(figures, batch_size=batch_size, coref=True)
     
@@ -466,13 +522,18 @@ class OpenChemIE:
             list of sentences and found molecules in the following format
             [
                 {
-                    'sentences': [[]]
-                    'predictions': [[str]]
+                    'sentences': [
+                      [str], # list of tokens
+                      # more sentences
+                    ],
+                    'predictions': [
+                      [str], # same lengths as corresponding lists in `sentences`
+                      # more sentences
+                    ],
                     'page': int
                 },
                 # more pages
             ]
-
         """
         self.chemrxnextractor.set_pdf_file(pdf)
         self.chemrxnextractor.set_pages(num_pages)
@@ -502,10 +563,7 @@ class OpenChemIE:
                             'reactions' : [
                                 {
                                     'Reactants': list of tuple,
-                                    'Products': list of tuple,
-                                    
-                                
-                                
+                                    'Products': list of tuple,           
                                 }
                                 # more reactions
                             ]
