@@ -1,4 +1,5 @@
 # OpenChemIE
+Authors: Yujie Qian, Alex Wang, Vincent Fan, Amber Wang, Regina Barzilay *(MIT CSAIL)*
 
 OpenChemIE is an open source toolkit for aiding with chemistry information extraction by offering methods for extracting molecule or reaction data from figures or text. Given PDFs from chemistry literature, we run specialized machine learning models to efficiently extract structured data. For text analysis, we provide methods for named entity recognition and reaction extraction. For figure analysis, we offer methods for molecule detection, text-figure coreference, molecule recognition, and reaction diagram parsing. For more information on the models involved, [see below](#models-in-openchemie). 
 
@@ -7,13 +8,13 @@ OpenChemIE is an open source toolkit for aiding with chemistry information extra
 ## Installation
 First create and activate a [conda](https://numdifftools.readthedocs.io/en/stable/how-to/create_virtual_env_with_conda.html) virtual environment with the following
 ```
-conda create -n yourenvname python=3.9
-conda activate yourenvname
+conda create -n openchemie python=3.9
+conda activate openchemie
 ```
 
 Run the following command to install the package and its dependencies
 ```
-python -m pip install 'OpenChemIE @ git+https://github.com/CrystalEye42/OpenChemIE'
+pip install 'OpenChemIE @ git+https://github.com/CrystalEye42/OpenChemIE'
 ```
 
 Alternatively, for development of the package, clone and install as editable with the following
@@ -244,7 +245,7 @@ bbox_results = model.extract_molecule_bboxes_from_figures(images)
 coref_results = model.extract_molecule_corefs_from_figures(images)
 ```
 
-The output format for these methods are largely the same as their corresponding PDF methods, just missing the `'page'` key. However, for extracting molecule bounding boxes from images, (which doesn't have a corresponding method), the output has the following format
+The output format for these methods are largely the same as their corresponding PDF methods, just missing the `'page'` key. However, for extracting molecule bounding boxes from images, (which doesn't have a corresponding method,) the output has the following format
 
 ```
 [
