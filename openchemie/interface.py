@@ -466,8 +466,16 @@ class OpenChemIE:
             list of sentences and found molecules in the following format
             [
                 {
-                    'sentences': [[]]
-                    'predictions': [[str]]
+                    'molecules': [
+                        { # first paragraph
+                            'text': str,
+                            'labels': [
+                                (str, int, int), # tuple of label, range start (inclusive), range end (exclusive)
+                                # more labels
+                            ]
+                        },
+                        # more paragraphs
+                    ]
                     'page': int
                 },
                 # more pages
@@ -476,12 +484,21 @@ class OpenChemIE:
         """
         self.chemrxnextractor.set_pdf_file(pdf)
         self.chemrxnextractor.set_pages(num_pages)
-        text = self.chemrxnextractor.get_sents_from_pdf(num_pages)
+        text = self.chemrxnextractor.get_paragraphs_from_pdf(num_pages)
         result = []
         for data in text:
-            output = self.chemner.predict_strings(data['sents'], batch_size=batch_size)
-            output['page'] = data['page']
-            result.append(output)
+            model_inp = []
+            for paragraph in data['paragraphs']:
+                model_inp.append(' '.join(paragraph).replace('\n', ''))
+            output = self.chemner.predict_strings(model_inp, batch_size=batch_size)
+            to_add = {
+                'molecules': [{
+                    'text': t,
+                    'labels': labels,
+                    } for t, labels in zip(model_inp, output)],
+                'page': data['page']
+            }
+            result.append(to_add)
         return result
 
 

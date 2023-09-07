@@ -22,7 +22,7 @@ setup(
             "Pillow==9.5.0",
             "RxnScribe @ git+https://github.com/Ozymandias314/MolDetect.git",
             "MolScribe @ git+https://github.com/thomas0809/MolScribe.git@main#egg=MolScribe",
-            "ChemIENER @ git+https://github.com/CrystalEye42/ChemIENER.git@f911231",
+            "ChemIENER @ git+https://github.com/Ozymandias314/ChemIENER.git",
             "chemrxnextractor @ git+https://github.com/CrystalEye42/ChemRxnExtractor.git@0f9529d",
             ],
         dependency_links=[
