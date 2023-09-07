@@ -38,7 +38,7 @@ model = OpenChemIE(device=torch.device('cpu')) # change to cuda for gpu
  - [extract_molecules_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L245)
  - [extract_molecules_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L513)
  - [extract_reactions_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L404)
- - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L549)
+ - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L560)
  - [extract_molecule_corefs_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L336)
  - [extract_molecules_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L303)
  - [extract_reactions_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L457)
