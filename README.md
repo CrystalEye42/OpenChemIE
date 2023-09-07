@@ -90,14 +90,16 @@ Output when extracting molecules from text has the following format
 ```
 [
     {
-        'sentences': [
-          [str], # list of tokens
-          # more sentences
-        ],
-        'predictions': [
-          [str], # same lengths as corresponding lists in `sentences`
-          # more sentences
-        ],
+        'molecules': [
+            { # first paragraph
+                'text': str,
+                'labels': [
+                    (str, int, int), # tuple of label, range start (inclusive), range end (exclusive)
+                    # more labels
+                ]
+            },
+            # more paragraphs
+        ]
         'page': int
     },
     # more pages
@@ -107,7 +109,7 @@ Output when extracting molecules from text has the following format
 ### Extracting Reaction Information From PDFs
 These methods are for parsing reaction schemes and conditions from figures or from text. 
  - [extract_reactions_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L404)
- - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L549)
+ - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L560)
 
 ```python
 import torch
