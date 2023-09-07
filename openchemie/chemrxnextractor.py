@@ -42,9 +42,9 @@ class ChemRxnExtractor(object):
     
     def extract_all(self, pages):
         ans = []
-        text = self.get_sents_from_pdf(pages)
+        text = self.get_paragraphs_from_pdf(pages)
         for data in text:
-            L = data['sents']
+            L = [sent for paragraph in data['paragraphs'] for sent in paragraph]
             reactions = self.get_reactions(L, page_number=data['page'])
             ans.append(reactions)
         return ans
@@ -61,7 +61,7 @@ class ChemRxnExtractor(object):
         return ans
 
 
-    def get_sents_from_pdf(self, pages):
+    def get_paragraphs_from_pdf(self, pages):
         current_page_num = 1
         
         result = []
@@ -70,6 +70,7 @@ class ChemRxnExtractor(object):
             pg = content.split("\n\n")
             L = []
             for line in pg:
+                paragraph = []
                 if '\x0c' in line:
                     continue
                 text = line
@@ -80,7 +81,7 @@ class ChemRxnExtractor(object):
                 while i < len(text):
                     if text[i] == '.':
                         if i != 0 and not text[i-1].isdigit() or i != len(text) - 1 and (text[i+1] == " " or text[i+1] == "\n"):
-                            L.append(text[curind:i+1] + "\n")
+                            paragraph.append(text[curind:i+1] + "\n")
                             while(i < len(text) and text[i] != " "):
                                 i += 1
                             curind = i + 1
@@ -92,12 +93,13 @@ class ChemRxnExtractor(object):
                         else:
                             break
                     if text[i - 1] != '.':
-                        L.append(text[curind:i] + ".\n")
+                        paragraph.append(text[curind:i] + ".\n")
                     else:
-                        L.append(text[curind:i] + "\n")
+                        paragraph.append(text[curind:i] + "\n")
+                L.append(paragraph)
 
             result.append({
-                'sents': L,
+                'paragraphs': L,
                 'page': current_page_num
             })
             current_page_num += 1
