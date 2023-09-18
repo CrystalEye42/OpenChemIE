@@ -63,7 +63,8 @@ class ChemRxnExtractor(object):
 
     def get_paragraphs_from_pdf(self, pages):
         current_page_num = 1
-        
+        if pages is None:
+            pages = len(self.pdf_text)
         result = []
         for page in range(pages):
             content = self.pdf_text[page]
