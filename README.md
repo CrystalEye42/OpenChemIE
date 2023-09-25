@@ -171,8 +171,8 @@ Output when extracting reactions from text has the following format
                 'tokens': list of words in relevant sentence,
                 'reactions' : [
                     {
-                        'Reactants': list of tuple,
-                        'Products': list of tuple,
+                        # key, value pairs where key is the label and value is a tuple of the form (tokens, start index, end index)
+                        # where indices are for the corresponding token list and start and end are inclusive
                     },
                     # more reactions
                 ]
@@ -210,8 +210,8 @@ The output has the following format
             # More bounding boxes
         ],
         'coref': [
-            [0, 1],
-            [3, 4],
+            ([0, 1], "4a"), #coreferences contain the indices of the molecule and identifier bounding boxes, as well as the string representation of the identifier
+            ([3, 4], "4b"),
             # More coref pairs
         ],
         'page': int
