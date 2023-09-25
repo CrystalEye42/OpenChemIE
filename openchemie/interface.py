@@ -1,4 +1,5 @@
 import torch
+import re
 from functools import lru_cache
 import layoutparser as lp
 import pdf2image
@@ -333,7 +334,7 @@ class OpenChemIE:
             ref.update(info)
         return results
 
-    def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None):
+    def extract_molecule_corefs_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe = True, ocr = True):
         """
         Get all molecule bboxes and corefs from figures in pdf
         Parameters:
@@ -365,12 +366,12 @@ class OpenChemIE:
         """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
-        results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size)
+        results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
         return results
 
-    def extract_molecule_corefs_from_figures(self, figures, batch_size=16):
+    def extract_molecule_corefs_from_figures(self, figures, batch_size=16, molscribe=True, ocr=True):
         """
         Get all molecule bboxes and corefs from list of figures
         Parameters:
@@ -399,7 +400,7 @@ class OpenChemIE:
             ]
         """
         figures = [convert_to_pil(figure) for figure in figures]
-        return self.coref.predict_images(figures, batch_size=batch_size, coref=True)
+        return self.coref.predict_images(figures, batch_size=batch_size, coref=True, molscribe = molscribe, ocr = ocr)
     
     def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
         """
@@ -588,6 +589,37 @@ class OpenChemIE:
         self.chemrxnextractor.set_pdf_file(pdf)
         self.chemrxnextractor.set_pages(num_pages)
         return self.chemrxnextractor.extract_reactions_from_text()
+
+    def extract_reactions_from_text_in_pdf_combined(self, pdf, num_pages = None):
+        results = self.extract_reactions_from_text_in_pdf(pdf, num_pages)
+
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages)
+
+        bboxes, corefs = results_coref['bboxes'], results_coref['corefs']
+
+        coref_smiles = {}
+
+        for coref in corefs:
+            mol, idt = coref[0], coref[1]
+
+            coref_smiles[idt] = bboxes[mol]['smiles']
+
+        for page in results:
+            for reactions in page['reactions']:
+                for reaction in reactions['reactions']:
+                    for idx, compound in enumerate(reaction['Reactants']):
+                        if compound[0] in coref_smiles:
+                            reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+        
+        return results
+            
+
+
+
+
+
+
+        
 
 
 if __name__=="__main__":
