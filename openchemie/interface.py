@@ -608,9 +608,14 @@ class OpenChemIE:
         for page in results:
             for reactions in page['reactions']:
                 for reaction in reactions['reactions']:
-                    for idx, compound in enumerate(reaction['Reactants']):
-                        if compound[0] in coref_smiles:
-                            reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                    if 'Reactants' in reaction:
+                        for idx, compound in enumerate(reaction['Reactants']):
+                            if compound[0] in coref_smiles:
+                                reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                    if 'Product' in reaction:
+                        for idx, compound in enumerate(reaction['Product']):
+                            if compound[0] in coref_smiles:
+                                reaction['Product'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
         
         return results
             
