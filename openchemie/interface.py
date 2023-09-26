@@ -596,7 +596,7 @@ class OpenChemIE:
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages)
 
         for result_coref in results_coref:
-            bboxes, corefs = results_coref['bboxes'], results_coref['corefs']
+            bboxes, corefs = result_coref['bboxes'], result_coref['corefs']
 
             coref_smiles = {}
 
