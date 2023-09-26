@@ -595,14 +595,15 @@ class OpenChemIE:
 
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages)
 
-        bboxes, corefs = results_coref['bboxes'], results_coref['corefs']
+        for result_coref in results_coref:
+            bboxes, corefs = results_coref['bboxes'], results_coref['corefs']
 
-        coref_smiles = {}
+            coref_smiles = {}
 
-        for coref in corefs:
-            mol, idt = coref[0], coref[1]
+            for coref in corefs:
+                mol, idt = coref[0], coref[1]
 
-            coref_smiles[idt] = bboxes[mol]['smiles']
+                coref_smiles[idt] = bboxes[mol]['smiles']
 
         for page in results:
             for reactions in page['reactions']:
