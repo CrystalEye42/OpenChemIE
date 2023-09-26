@@ -611,7 +611,7 @@ class OpenChemIE:
                     if 'Reactants' in reaction:
                         if isinstance(reaction['Reactants'], tuple):
                             if reaction['Reactants'][0] in coref_smiles:
-                                reaction['Reactants'][0][0] = f'{reaction['Reactants'][0]} ({coref_smiles[reaction['Reactants'][0]]})'
+                                reaction['Reactants'][0][0] = f'{reaction["Reactants"][0]} ({coref_smiles[reaction["Reactants"][0]]})'
                         else:
                             for idx, compound in enumerate(reaction['Reactants']):
                                 if compound[0] in coref_smiles:
@@ -619,7 +619,7 @@ class OpenChemIE:
                     if 'Product' in reaction:
                         if isinstance(reaction['Product'], tuple):
                             if reaction['Product'][0] in coref_smiles:
-                                reaction['Product'][0][0] = f'{reaction['Product'][0]} ({coref_smiles[reaction['Product'][0]]})'
+                                reaction['Product'][0][0] = f'{reaction["Product"][0]} ({coref_smiles[reaction["Product"][0]]})'
                         else:
                             for idx, compound in enumerate(reaction['Product']):
                                 if compound[0] in coref_smiles:
