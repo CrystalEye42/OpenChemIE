@@ -614,12 +614,34 @@ class OpenChemIE:
         return results
             
 
-
-
-
-
-
-        
+    def extract_reactions_from_figures_and_tables_in_pdf(self, pdf, num_pages=None, batch_size=16, molscribe=True, ocr=True):
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
+        images = [figure['figure']['image'] for figure in figures]
+        results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
+        for figure, result in zip(figures, results):
+            result['page'] = figure['page']
+            if figure['table']['content'] is not None:
+                content = figure['table']['content']
+                if len(result['reactions']) != 1:
+                    print("Warning: multiple reactions detected")
+                orig_reaction = result['reactions'][0]
+                for row in content['rows']:
+                    expanded_conditions = orig_reaction['conditions'][:]
+                    expanded_conditions.extend([{
+                        'category': '[Table]',
+                        'text': entry['text'], 
+                        'tag': col['tag'],
+                        'header': col['text'],
+                        } for col, entry in zip(content['columns'], row)])
+  
+                    to_add = {
+                        'reactants': orig_reaction['reactants'][:],
+                        'conditions': expanded_conditions,
+                        'products': orig_reaction['products'][:]
+                    }
+                    result['reactions'].append(to_add)
+                print(result)
+        return results
 
 
 if __name__=="__main__":
