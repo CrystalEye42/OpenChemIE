@@ -10,7 +10,7 @@ from rxnscribe import RxnScribe, MolDetect
 from chemiener import ChemNER
 from .chemrxnextractor import ChemRxnExtractor
 from .tableextractor import TableExtractor
-from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
+from .utils import *
 
 class OpenChemIE:
     def __init__(self, device=None):
@@ -632,7 +632,7 @@ class OpenChemIE:
                         'text': entry['text'], 
                         'tag': col['tag'],
                         'header': col['text'],
-                        } for col, entry in zip(content['columns'], row)])
+                        } for col, entry in zip(content['columns'], row) if col['tag'] != 'alkyl group'])
   
                     to_add = {
                         'reactants': orig_reaction['reactants'][:],
