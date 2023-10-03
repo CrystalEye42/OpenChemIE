@@ -118,7 +118,7 @@ class OpenChemIE:
             ckpt_path: path to checkpoint to use, if None then will use default
         """
         if ckpt_path is None:
-            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "coref_best.ckpt")
+            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "coref_best_hf.ckpt")
         self._coref = MolDetect(ckpt_path, device=self.device, coref=True)
 
 
@@ -366,6 +366,7 @@ class OpenChemIE:
         """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
+        print(f'batch size is {batch_size}')
         results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
@@ -400,6 +401,8 @@ class OpenChemIE:
             ]
         """
         figures = [convert_to_pil(figure) for figure in figures]
+        print(figures)
+        print(batch_size)
         return self.coref.predict_images(figures, batch_size=batch_size, coref=True, molscribe = molscribe, ocr = ocr)
     
     def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
@@ -591,19 +594,25 @@ class OpenChemIE:
         return self.chemrxnextractor.extract_reactions_from_text()
 
     def extract_reactions_from_text_in_pdf_combined(self, pdf, num_pages = None):
-        results = self.extract_reactions_from_text_in_pdf(pdf, num_pages)
+        results = self.extract_reactions_from_text_in_pdf(pdf, num_pages = num_pages)
 
-        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages)
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
 
+        coref_smiles = {}
+         
         for result_coref in results_coref:
             bboxes, corefs = result_coref['bboxes'], result_coref['corefs']
+            
+            print(corefs)
+    
 
-            coref_smiles = {}
+            
 
             for coref in corefs:
                 mol, idt = coref[0], coref[1]
-
-                coref_smiles[bboxes[idt]['text']] = bboxes[mol]['smiles']
+                print(bboxes[idt]['text'])
+                if len(bboxes[idt]['text']) > 0:
+                    coref_smiles[bboxes[idt]['text'][0]] = bboxes[mol]['smiles']
 
         for page in results:
             for reactions in page['reactions']:
@@ -611,20 +620,23 @@ class OpenChemIE:
                     if 'Reactants' in reaction:
                         if isinstance(reaction['Reactants'], tuple):
                             if reaction['Reactants'][0] in coref_smiles:
-                                reaction['Reactants'][0][0] = f'{reaction["Reactants"][0]} ({coref_smiles[reaction["Reactants"][0]]})'
+                                reaction['Reactants'] = (f'{reaction["Reactants"][0]} ({coref_smiles[reaction["Reactants"][0]]})', reaction['Reactants'][1], reaction['Reactants'][2])
                         else:
                             for idx, compound in enumerate(reaction['Reactants']):
                                 if compound[0] in coref_smiles:
-                                    reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                                    reaction['Reactants'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
                     if 'Product' in reaction:
                         if isinstance(reaction['Product'], tuple):
                             if reaction['Product'][0] in coref_smiles:
-                                reaction['Product'][0][0] = f'{reaction["Product"][0]} ({coref_smiles[reaction["Product"][0]]})'
+                                reaction['Product'] = (f'{reaction["Product"][0]} ({coref_smiles[reaction["Product"][0]]})', reaction['Product'][1], reaction['Product'][2])
                         else:
                             for idx, compound in enumerate(reaction['Product']):
                                 if compound[0] in coref_smiles:
-                                    reaction['Product'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                                    reaction['Product'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
         
+        print("coref smiles is")
+        print(coref_smiles)
+
         return results
             
 
