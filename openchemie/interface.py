@@ -100,7 +100,7 @@ class OpenChemIE:
             ckpt_path: path to checkpoint to use, if None then will use default
         """
         if ckpt_path is None:
-            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best.ckpt")
+            ckpt_path = hf_hub_download("Ozymandias314/MolDetectCkpt", "best_hf.ckpt")
         self._moldet = MolDetect(ckpt_path, device=self.device)
         
 
