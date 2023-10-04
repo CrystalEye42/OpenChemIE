@@ -618,6 +618,7 @@ class OpenChemIE:
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
+        r_group_pattern = re.compile(r'^(\d+-)?(?P<group>\w+)( \(\w+\))?$')
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
             if figure['table']['content'] is not None:
@@ -625,22 +626,30 @@ class OpenChemIE:
                 if len(result['reactions']) != 1:
                     print("Warning: multiple reactions detected")
                 orig_reaction = result['reactions'][0]
+                graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, self.molscribe, batch_size=batch_size)
+                relevant_locs = find_relevant_groups(graphs, content['columns'])
                 for row in content['rows']:
+                    r_groups = {}
                     expanded_conditions = orig_reaction['conditions'][:]
-                    expanded_conditions.extend([{
-                        'category': '[Table]',
-                        'text': entry['text'], 
-                        'tag': col['tag'],
-                        'header': col['text'],
-                        } for col, entry in zip(content['columns'], row) if col['tag'] != 'alkyl group'])
-  
+                    for col, entry in zip(content['columns'], row):
+                        if col['tag'] != 'alkyl group':
+                            expanded_conditions.append({
+                                'category': '[Table]',
+                                'text': entry['text'], 
+                                'tag': col['tag'],
+                                'header': col['text'],
+                            })
+                        else:
+                            found = r_group_pattern.match(entry['text'])
+                            r_groups[col['text']] = found.group('group')
+
+                    reaction = get_replaced_reaction(orig_reaction, graphs, relevant_locs, r_groups, self.molscribe)  
                     to_add = {
-                        'reactants': orig_reaction['reactants'][:],
+                        'reactants': reaction['reactants'][:],
                         'conditions': expanded_conditions,
-                        'products': orig_reaction['products'][:]
+                        'products': reaction['products'][:]
                     }
                     result['reactions'].append(to_add)
-                print(result)
         return results
 
 
