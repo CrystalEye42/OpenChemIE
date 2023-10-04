@@ -595,21 +595,35 @@ class OpenChemIE:
 
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages)
 
-        bboxes, corefs = results_coref['bboxes'], results_coref['corefs']
+        for result_coref in results_coref:
+            bboxes, corefs = result_coref['bboxes'], result_coref['corefs']
 
-        coref_smiles = {}
+            coref_smiles = {}
 
-        for coref in corefs:
-            mol, idt = coref[0], coref[1]
+            for coref in corefs:
+                mol, idt = coref[0], coref[1]
 
-            coref_smiles[idt] = bboxes[mol]['smiles']
+                coref_smiles[bboxes[idt]['text']] = bboxes[mol]['smiles']
 
         for page in results:
             for reactions in page['reactions']:
                 for reaction in reactions['reactions']:
-                    for idx, compound in enumerate(reaction['Reactants']):
-                        if compound[0] in coref_smiles:
-                            reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                    if 'Reactants' in reaction:
+                        if isinstance(reaction['Reactants'], tuple):
+                            if reaction['Reactants'][0] in coref_smiles:
+                                reaction['Reactants'][0][0] = f'{reaction['Reactants'][0]} ({coref_smiles[reaction['Reactants'][0]]})'
+                        else:
+                            for idx, compound in enumerate(reaction['Reactants']):
+                                if compound[0] in coref_smiles:
+                                    reaction['Reactants'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
+                    if 'Product' in reaction:
+                        if isinstance(reaction['Product'], tuple):
+                            if reaction['Product'][0] in coref_smiles:
+                                reaction['Product'][0][0] = f'{reaction['Product'][0]} ({coref_smiles[reaction['Product'][0]]})'
+                        else:
+                            for idx, compound in enumerate(reaction['Product']):
+                                if compound[0] in coref_smiles:
+                                    reaction['Product'][idx][0] = f'{compound[0]} ({coref_smiles[compound[0]]})'
         
         return results
             
