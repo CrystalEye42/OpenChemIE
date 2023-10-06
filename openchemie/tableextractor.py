@@ -99,21 +99,21 @@ class TableExtractor(object):
         for page_layout in pdfminer.high_level.extract_pages(self.pdf_file, page_numbers=[self.page]):
             elements = []
             for element in page_layout:
-                if isinstance(element, pdfminer.layout.LTTextBoxHorizontal):
+                if isinstance(element, pdfminer.layout.LTTextBox):
                     for e in element._objs:
                         temp = e.bbox
                         if temp[0] > min(new_coords[0], new_coords[2]) and temp[0] < max(new_coords[0], new_coords[2]) and temp[1] > min(new_coords[1], new_coords[3]) and temp[1] < max(new_coords[1], new_coords[3]) and temp[2] > min(new_coords[0], new_coords[2]) and temp[2] < max(new_coords[0], new_coords[2]) and temp[3] > min(new_coords[1], new_coords[3]) and temp[3] < max(new_coords[1], new_coords[3]) and isinstance(e, pdfminer.layout.LTTextLineHorizontal):
-                            #print(e)
                             elements.append([e.bbox[0], e.bbox[1], e.bbox[2], e.bbox[3], e.get_text()])
                             
             elements = sorted(elements, key=itemgetter(0))
             w = sorted(elements, key=itemgetter(3), reverse=True)
-            if len(w) == 0:
+            if len(w) <= 1:
                 continue
 
             ret = {}
             i = 1
             g = [w[0]]
+
             while w[i][3] > w[i-1][1]:
                 g.append(w[i])
                 i += 1
@@ -248,6 +248,8 @@ class TableExtractor(object):
         i = 0
         for coordinate in table_coordinates_in_pdf:
             ret = {}
+            pad = 20
+            coordinate = [coordinate[0] - pad, coordinate[1], coordinate[2] + pad, coordinate[3]]
             ullr_coord = [coordinate[0], coordinate[3], coordinate[2], coordinate[1]]
         
             table_results = self.extract_singular_table(coordinate)

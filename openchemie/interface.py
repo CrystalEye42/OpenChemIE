@@ -10,7 +10,7 @@ from rxnscribe import RxnScribe, MolDetect
 from chemiener import ChemNER
 from .chemrxnextractor import ChemRxnExtractor
 from .tableextractor import TableExtractor
-from .utils import clean_bbox_output, get_figures_from_pages, convert_to_pil, convert_to_cv2
+from .utils import *
 
 class OpenChemIE:
     def __init__(self, device=None):
@@ -366,7 +366,6 @@ class OpenChemIE:
         """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
-        print(f'batch size is {batch_size}')
         results = self.extract_molecule_corefs_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         for figure, result in zip(figures, results):
             result['page'] = figure['page']
@@ -401,8 +400,6 @@ class OpenChemIE:
             ]
         """
         figures = [convert_to_pil(figure) for figure in figures]
-        print(figures)
-        print(batch_size)
         return self.coref.predict_images(figures, batch_size=batch_size, coref=True, molscribe = molscribe, ocr = ocr)
     
     def extract_reactions_from_figures_in_pdf(self, pdf, batch_size=16, num_pages=None, molscribe=True, ocr=True):
@@ -595,57 +592,36 @@ class OpenChemIE:
 
     def extract_reactions_from_text_in_pdf_combined(self, pdf, num_pages = None):
         results = self.extract_reactions_from_text_in_pdf(pdf, num_pages = num_pages)
-
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
+        return associate_corefs(results, results_coref)
 
-        coref_smiles = {}
-         
-        for result_coref in results_coref:
-            bboxes, corefs = result_coref['bboxes'], result_coref['corefs']
-            
-            print(corefs)
-    
+    def extract_reactions_from_figures_and_tables_in_pdf(self, pdf, num_pages=None, batch_size=16, molscribe=True, ocr=True):
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
+        images = [figure['figure']['image'] for figure in figures]
+        results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
+        return process_tables(figures, results, self.molscribe, batch_size=batch_size)
 
-            
+    def extract_reactions_from_pdf(self, pdf, num_pages=None, batch_size=16):
+        """
+        Returns:
+            dictionary of reactions from multimodal sources
+            {
+                'figures': list in the form of results from `extract_reactions_from_figures_in_pdf`
+                'text': list in the form of results from `extract_reactions_from_text_in_pdf`
+            }
 
-            for coref in corefs:
-                mol, idt = coref[0], coref[1]
-                print(bboxes[idt]['text'])
-                if len(bboxes[idt]['text']) > 0:
-                    coref_smiles[bboxes[idt]['text'][0]] = bboxes[mol]['smiles']
-
-        for page in results:
-            for reactions in page['reactions']:
-                for reaction in reactions['reactions']:
-                    if 'Reactants' in reaction:
-                        if isinstance(reaction['Reactants'], tuple):
-                            if reaction['Reactants'][0] in coref_smiles:
-                                reaction['Reactants'] = (f'{reaction["Reactants"][0]} ({coref_smiles[reaction["Reactants"][0]]})', reaction['Reactants'][1], reaction['Reactants'][2])
-                        else:
-                            for idx, compound in enumerate(reaction['Reactants']):
-                                if compound[0] in coref_smiles:
-                                    reaction['Reactants'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
-                    if 'Product' in reaction:
-                        if isinstance(reaction['Product'], tuple):
-                            if reaction['Product'][0] in coref_smiles:
-                                reaction['Product'] = (f'{reaction["Product"][0]} ({coref_smiles[reaction["Product"][0]]})', reaction['Product'][1], reaction['Product'][2])
-                        else:
-                            for idx, compound in enumerate(reaction['Product']):
-                                if compound[0] in coref_smiles:
-                                    reaction['Product'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
-        
-        print("coref smiles is")
-        print(coref_smiles)
-
-        return results
-            
-
-
-
-
-
-
-        
+        """
+        figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
+        images = [figure['figure']['image'] for figure in figures]
+        results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=True, ocr=True)
+        table_expanded_results = process_tables(figures, results, self.molscribe, batch_size=batch_size)
+        text_results = self.extract_reactions_from_text_in_pdf(pdf, num_pages = num_pages)
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
+        coref_expanded_results = associate_corefs(text_results, results_coref)
+        return {
+            'figures': table_expanded_results,
+            'text': coref_expanded_results,
+        }
 
 
 if __name__=="__main__":
