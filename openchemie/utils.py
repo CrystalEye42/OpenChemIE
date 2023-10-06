@@ -103,7 +103,7 @@ def process_tables(figures, results, molscribe, batch_size=16):
                     'products': reaction['products'][:]
                 }
                 result['reactions'].append(to_add)
-    return result
+    return results
 
 
 def get_atoms_and_bonds(image, reaction, molscribe, batch_size=16):
