@@ -99,7 +99,7 @@ def process_tables(figures, results, molscribe, batch_size=16):
                 reaction = get_replaced_reaction(orig_reaction, graphs, relevant_locs, r_groups, molscribe)  
                 to_add ={
                     'reactants': reaction['reactants'][:],
-                    'condition': expanded_conditions,
+                    'conditions': expanded_conditions,
                     'products': reaction['products'][:]
                 }
                 result['reactions'].append(to_add)

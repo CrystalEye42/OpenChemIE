@@ -574,8 +574,9 @@ class OpenChemIE:
                             'tokens': list of words in relevant sentence,
                             'reactions' : [
                                 {
-                                    'Reactants': list of tuple,
-                                    'Products': list of tuple,           
+                                    # key, value pairs where key is the label and value is a tuple
+                                    # or list of tuples of the form (tokens, start index, end index)
+                                    # where indices are for the corresponding token list and start and end are inclusive
                                 }
                                 # more reactions
                             ]
@@ -590,12 +591,83 @@ class OpenChemIE:
         self.chemrxnextractor.set_pages(num_pages)
         return self.chemrxnextractor.extract_reactions_from_text()
 
-    def extract_reactions_from_text_in_pdf_combined(self, pdf, num_pages = None):
-        results = self.extract_reactions_from_text_in_pdf(pdf, num_pages = num_pages)
+    def extract_reactions_from_text_in_pdf_combined(self, pdf, num_pages=None):
+        """
+        Get reaction information from text in pdf and combined with corefs from figures
+        Parameters:
+            pdf: path to pdf
+            num_pages: process only first `num_pages` pages, if `None` then process all
+        Returns:
+            list of pages and corresponding reaction info in the following format
+            [
+                {
+                    'page': page number
+                    'reactions': [
+                        {
+                            'tokens': list of words in relevant sentence,
+                            'reactions' : [
+                                {
+                                    # key, value pairs where key is the label and value is a tuple
+                                    # or list of tuples of the form (tokens, start index, end index)
+                                    # where indices are for the corresponding token list and start and end are inclusive
+                                }
+                                # more reactions
+                            ]
+                        }
+                        # more reactions in other sentences
+                    ]
+                },
+                # more pages
+            ]
+        """
+        results = self.extract_reactions_from_text_in_pdf(pdf, num_pages=num_pages)
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
         return associate_corefs(results, results_coref)
 
     def extract_reactions_from_figures_and_tables_in_pdf(self, pdf, num_pages=None, batch_size=16, molscribe=True, ocr=True):
+        """
+        Get reaction information from figures and combine with table information in pdf
+        Parameters:
+            pdf: path to pdf, or byte file
+            batch_size: batch size for inference in all models
+            num_pages: process only first `num_pages` pages, if `None` then process all
+            molscribe: whether to predict and return smiles and molfile info
+            ocr: whether to predict and return text of conditions
+        Returns:
+            list of figures and corresponding molecule info in the following format
+            [
+                {
+                    'figure': PIL image
+                    'reactions': [
+                        {
+                            'reactants': [
+                                {
+                                    'category': str,
+                                    'bbox': tuple (x1,x2,y1,y2),
+                                    'category_id': int,
+                                    'smiles': str,
+                                    'molfile': str,
+                                },
+                                # more reactants
+                            ],
+                            'conditions': [
+                                {
+                                    'category': str,
+                                    'text': list of str,
+                                },
+                                # more conditions
+                            ],
+                            'products': [
+                                # same structure as reactants
+                            ]
+                        },
+                        # more reactions
+                    ],
+                    'page': int
+                },
+                # more figures
+            ]
+        """
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
@@ -606,8 +678,58 @@ class OpenChemIE:
         Returns:
             dictionary of reactions from multimodal sources
             {
-                'figures': list in the form of results from `extract_reactions_from_figures_in_pdf`
-                'text': list in the form of results from `extract_reactions_from_text_in_pdf`
+                'figures': [
+                    {
+                        'figure': PIL image
+                        'reactions': [
+                            {
+                                'reactants': [
+                                    {
+                                        'category': str,
+                                        'bbox': tuple (x1,x2,y1,y2),
+                                        'category_id': int,
+                                        'smiles': str,
+                                        'molfile': str,
+                                    },
+                                    # more reactants
+                                ],
+                                'conditions': [
+                                    {
+                                        'category': str,
+                                        'text': list of str,
+                                    },
+                                    # more conditions
+                                ],
+                                'products': [
+                                    # same structure as reactants
+                                ]
+                            },
+                            # more reactions
+                        ],
+                        'page': int
+                    },
+                    # more figures
+                ]
+                'text': [
+                    {
+                        'page': page number
+                        'reactions': [
+                            {
+                                'tokens': list of words in relevant sentence,
+                                'reactions' : [
+                                    {
+                                        # key, value pairs where key is the label and value is a tuple
+                                        # or list of tuples of the form (tokens, start index, end index)
+                                        # where indices are for the corresponding token list and start and end are inclusive
+                                    }
+                                    # more reactions
+                                ]
+                            }
+                            # more reactions in other sentences
+                        ]
+                    },
+                    # more pages
+                ]
             }
 
         """
