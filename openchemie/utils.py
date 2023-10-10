@@ -276,12 +276,17 @@ def backout(results, coref_results):
 
 def associate_corefs(results, results_coref):
     coref_smiles = {}
+    idx_pattern = r'\b\d+[a-zA-Z]{0,2}\b'
     for result_coref in results_coref:
         bboxes, corefs = result_coref['bboxes'], result_coref['corefs']
         for coref in corefs:
             mol, idt = coref[0], coref[1]
             if len(bboxes[idt]['text']) > 0:
-                coref_smiles[bboxes[idt]['text'][0]] = bboxes[mol]['smiles']
+                for text in bboxes[idt]['text']:
+                    matches = re.findall(idx_pattern, text)
+                    for match in matches:
+                        coref_smiles[match] = bboxes[mol]['smiles']
+
     for page in results:
         for reactions in page['reactions']:
             for reaction in reactions['reactions']:
