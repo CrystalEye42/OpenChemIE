@@ -27,13 +27,13 @@ class TableExtractor(object):
         self.img = None
         self.output_image = True
         self.tagging = {
-            'substance': ['compound', 'salt', 'base', 'solvent', 'CBr4', 'collidine', 'InX3', 'substrate', 'ligand', 'PPh3', 'PdL2', 'Cu', 'compd', 'reagent', 'reagant', 'acid', 'aldehyde', 'amine', 'Ln', 'X', 'H2O', 'enzyme', 'cofactor', 'oxidant', 'Pt(COD)Cl2', 'CuBr2', 'Ar', 'additive'],
+            'substance': ['compound', 'salt', 'base', 'solvent', 'CBr4', 'collidine', 'InX3', 'substrate', 'ligand', 'PPh3', 'PdL2', 'Cu', 'compd', 'reagent', 'reagant', 'acid', 'aldehyde', 'amine', 'Ln', 'X', 'H2O', 'enzyme', 'cofactor', 'oxidant', 'Pt(COD)Cl2', 'CuBr2', 'additive'],
             'ratio': [':'],
             'measurement': ['μM', 'nM', 'IC50', 'CI', 'excitation', 'emission', 'Φ', 'φ', 'shift', 'ee', 'ΔG', 'ΔH', 'TΔS', 'Δ', 'distance', 'trajectory', 'V', 'eV'],
             'temperature': ['temp', 'temperature', 'T', '°C'],
             'time': ['time', 't(', 't ('],
             'result': ['yield', 'aa', 'result', 'product', 'conversion', '(%)'],
-            'alkyl group': ['R'],
+            'alkyl group': ['R', 'Ar'],
             'solvent': ['solvent'],
             'counter': ['entry', 'no.'],
             'catalyst': ['catalyst', 'cat.'],

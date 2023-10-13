@@ -72,13 +72,13 @@ def convert_to_cv2(image):
     return image
 
 def process_tables(figures, results, molscribe, batch_size=16):
-    r_group_pattern = re.compile(r'^(\d+-)?(?P<group>\w+)( \(\w+\))?$')
+    r_group_pattern = re.compile(r'^(\w+-)?(?P<group>\w+)( \(\w+\))?$')
     for figure, result in zip(figures, results):
         result['page'] = figure['page']
         if figure['table']['content'] is not None:
             content = figure['table']['content']
             if len(result['reactions']) != 1:
-                print("Warning: multiple reactions detected")
+                print("Warning: multiple reactions detected for table")
             orig_reaction = result['reactions'][0]
             graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, molscribe, batch_size=batch_size)
             relevant_locs = find_relevant_groups(graphs, content['columns'])
@@ -95,7 +95,8 @@ def process_tables(figures, results, molscribe, batch_size=16):
                         })
                     else:
                         found = r_group_pattern.match(entry['text'])
-                        r_groups[col['text']] = found.group('group')
+                        if found is not None:
+                            r_groups[col['text']] = found.group('group')
                 reaction = get_replaced_reaction(orig_reaction, graphs, relevant_locs, r_groups, molscribe)  
                 to_add ={
                     'reactants': reaction['reactants'][:],
