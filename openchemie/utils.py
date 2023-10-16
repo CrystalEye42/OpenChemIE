@@ -242,7 +242,7 @@ def get_atom_mapping(prod_mol, prod_smiles):
     
     prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
 
-    return prod_mol_to_query
+    return prod_mol_to_query, prod_template_mol_query
 
 
 
@@ -287,7 +287,7 @@ def backout(results, coref_results):
 
     #prepare the product template and get the associated mapping
 
-    prod_mol_to_query = get_atom_mapping(prod_mol, prod_smiles)
+    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles)
     
     reactant_mols = []
     
@@ -314,7 +314,7 @@ def backout(results, coref_results):
         # and adjust the indices of the r groups accordingly
         if has_r:
             #get the mapping
-            reactant_mol_to_query = get_atom_mapping(reactant_mols[-1], reactant['smiles'])
+            reactant_mol_to_query, _ = get_atom_mapping(reactant_mols[-1], reactant['smiles'])
 
             #make the adjustment
             for info in reactant_information[idx]:
