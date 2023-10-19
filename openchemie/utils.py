@@ -322,9 +322,12 @@ def backout(results, coref_results):
             
             #go through all atoms and check if they are an R group, if so add it to reactant information
             if atom['atom_symbol'] in r_sites:
-                has_r = True
-                reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
-                reactant_information[idx].append([atom['atom_symbol'], a_idx, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx).GetNeighbors()][0]])
+                if reactant_mols.GetNumAtoms()==1:
+                   reactant_information[idx].append([atom['atom_symbol'], -1, -1])
+                else: 
+                    has_r = True
+                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
+                    reactant_information[idx].append([atom['atom_symbol'], a_idx, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx).GetNeighbors()][0]])
 
         # if the reactant had r groups, we had to use the molecule generated from the MolBlock. 
         # but the molblock may have unexpanded elemeents that are not R groups
@@ -405,23 +408,27 @@ def backout(results, coref_results):
                         modified_reactant_smiles.append(Chem.MolToSmiles(modify_reactants[reactant_idx]))
                     else:
                         combined = reactant_mols[reactant_idx]
-                        for r_group, r_index, connect_index in reactant_information[reactant_idx]:
-                            combined = Chem.CombineMols(combined, r_group_information[r_group][0])
+                        if combined.GetNumAtoms() == 1:
+                            r_group, _, _ = reactant_information[0]
+                            modified_reactant_smiles.append(Chem.MolToSmiles(r_group_information[r_group][0]))
+                        else:
+                            for r_group, r_index, connect_index in reactant_information[reactant_idx]:
+                                combined = Chem.CombineMols(combined, r_group_information[r_group][0])
 
-                        editable = Chem.EditableMol(combined)
-                        atomIdxAdder = reactant_mols[reactant_idx].GetNumAtoms()
-                        for r_group, r_index, connect_index in reactant_information[reactant_idx]:
-                            Chem.EditableMol.RemoveBond(editable, r_index, connect_index)
-                            Chem.EditableMol.AddBond(editable, connect_index, atomIdxAdder + r_group_information[r_group][1], Chem.BondType.SINGLE)
-                            atomIdxAdder += r_group_information[r_group][0].GetNumAtoms()
-                        r_indices = [i[1] for i in reactant_information[reactant_idx]]
-                        
-                        r_indices.sort(reverse = True)
-                        
+                            editable = Chem.EditableMol(combined)
+                            atomIdxAdder = reactant_mols[reactant_idx].GetNumAtoms()
+                            for r_group, r_index, connect_index in reactant_information[reactant_idx]:
+                                Chem.EditableMol.RemoveBond(editable, r_index, connect_index)
+                                Chem.EditableMol.AddBond(editable, connect_index, atomIdxAdder + r_group_information[r_group][1], Chem.BondType.SINGLE)
+                                atomIdxAdder += r_group_information[r_group][0].GetNumAtoms()
+                            r_indices = [i[1] for i in reactant_information[reactant_idx]]
+                            
+                            r_indices.sort(reverse = True)
+                            
 
-                        
-                        for r_index in r_indices:
-                            Chem.EditableMol.RemoveAtom(editable, r_index)
+                            
+                            for r_index in r_indices:
+                                Chem.EditableMol.RemoveAtom(editable, r_index)
                             
                         modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
 
