@@ -430,7 +430,7 @@ def backout(results, coref_results):
                             for r_index in r_indices:
                                 Chem.EditableMol.RemoveAtom(editable, r_index)
                             
-                        modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
+                            modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
 
                 toreturn.append((modified_reactant_smiles, parsed))
     return toreturn
