@@ -409,7 +409,7 @@ def backout(results, coref_results):
                     else:
                         combined = reactant_mols[reactant_idx]
                         if combined.GetNumAtoms() == 1:
-                            r_group, _, _ = reactant_information[0]
+                            r_group, _, _ = reactant_information[reactant_idx][0]
                             modified_reactant_smiles.append(Chem.MolToSmiles(r_group_information[r_group][0]))
                         else:
                             for r_group, r_index, connect_index in reactant_information[reactant_idx]:
