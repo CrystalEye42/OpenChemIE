@@ -322,7 +322,7 @@ def backout(results, coref_results):
             
             #go through all atoms and check if they are an R group, if so add it to reactant information
             if atom['atom_symbol'] in r_sites:
-                if reactant_mols.GetNumAtoms()==1:
+                if reactant_mols[-1].GetNumAtoms()==1:
                    reactant_information[idx].append([atom['atom_symbol'], -1, -1])
                 else: 
                     has_r = True
