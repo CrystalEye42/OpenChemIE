@@ -22,7 +22,7 @@ BOND_TO_INT = {
 }
 
 RGROUP_SYMBOLS = ['R', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12',
-                  'Ra', 'Rb', 'Rc', 'Rd', 'X', 'Y', 'Z', 'Q', 'A', 'E', 'Ar']
+                  'Ra', 'Rb', 'Rc', 'Rd', 'Rf', 'X', 'Y', 'Z', 'Q', 'A', 'E', 'Ar']
 
 RGROUP_SYMBOLS = RGROUP_SYMBOLS + [f'[{i}]' for i in RGROUP_SYMBOLS]
 
@@ -255,7 +255,6 @@ def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = Non
             prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
             
             good_map = True
-            
             for i in r_sites_reversed:
                 if prod_template_mol_query.GetAtomWithIdx(prod_mol_to_query[i]).GetSymbol() not in RGROUP_SMILES:
                     good_map = False
@@ -266,8 +265,7 @@ def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = Non
 
 
 
-def backout_r_groups(results, coref_results):
-    
+def backout(results, coref_results):
     reactants = results[0]['reactions'][0]['reactants']
     products = [i['smiles'] for i in results[0]['reactions'][0]['products']]
     coref_results_dict = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[1]]['text']  for coref in coref_results[0]['corefs']}
