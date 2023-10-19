@@ -209,7 +209,7 @@ def get_sites(tar, ref, ref_site = False):
                     else: sites.append(idx_pair[in_template.index(j.GetIdx())][0])
     return sites
 
-def get_atom_mapping(prod_mol, prod_smiles, prod = False):
+def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = None):
     # returns prod_mol_to_query which is the mapping of atom indices in prod_mol to the atom indices of the molecule represented by prod_smiles
     prod_template_intermediate = Chem.MolToSmiles(prod_mol)
     prod_template = prod_smiles
@@ -307,7 +307,7 @@ def backout(results, coref_results):
 
     #prepare the product template and get the associated mapping
 
-    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, prod = True)
+    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, prod = True, r_sites_reversed = r_sites_reversed)
     
     reactant_mols = []
     
