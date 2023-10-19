@@ -26,7 +26,7 @@ RGROUP_SYMBOLS = ['R', 'R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R1
 
 RGROUP_SYMBOLS = RGROUP_SYMBOLS + [f'[{i}]' for i in RGROUP_SYMBOLS]
 
-RGROUP_SMILES = ['[1*]', '[2*]','[3*]', '[4*]','[5*]', '[6*]','[7*]', '[8*]','[9*]', '[10*]','[11*]', '[12*]','[a*]', '[b*]','[c*]', '[d*]','*']
+RGROUP_SMILES = ['[1*]', '[2*]','[3*]', '[4*]','[5*]', '[6*]','[7*]', '[8*]','[9*]', '[10*]','[11*]', '[12*]','[a*]', '[b*]','[c*]', '[d*]','*', '[Rf]']
 
 def get_figures_from_pages(pages, pdfparser):
     figures = []
@@ -209,7 +209,7 @@ def get_sites(tar, ref, ref_site = False):
                     else: sites.append(idx_pair[in_template.index(j.GetIdx())][0])
     return sites
 
-def get_atom_mapping(prod_mol, prod_smiles):
+def get_atom_mapping(prod_mol, prod_smiles, prod = False):
     # returns prod_mol_to_query which is the mapping of atom indices in prod_mol to the atom indices of the molecule represented by prod_smiles
     prod_template_intermediate = Chem.MolToSmiles(prod_mol)
     prod_template = prod_smiles
@@ -241,6 +241,26 @@ def get_atom_mapping(prod_mol, prod_smiles):
     query_to_intermediate = {b:a for a,b in idx_pair_2}
     
     prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
+
+    if prod:
+        substructs = prod_template_mol_query.GetSubstructMatches(prod_template_intermediate_mol_query, uniquify = False)
+    
+        #idx_pair_2 = rdDepictor.GenerateDepictionMatching2DStructure(prod_template_mol_query, prod_template_intermediate_mol_query)
+        for substruct in substructs:
+            
+            
+            intermediate_to_query = {a:b for a, b in enumerate(substruct)}
+            query_to_intermediate = {intermediate_to_query[i]: i for i in intermediate_to_query}
+
+            prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
+            
+            good_map = True
+            
+            for i in r_sites_reversed:
+                if prod_template_mol_query.GetAtomWithIdx(prod_mol_to_query[i]).GetSymbol() not in RGROUP_SMILES:
+                    good_map = False
+            if good_map:
+                break
 
     return prod_mol_to_query, prod_template_mol_query
 
@@ -287,7 +307,7 @@ def backout(results, coref_results):
 
     #prepare the product template and get the associated mapping
 
-    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles)
+    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, prod = True)
     
     reactant_mols = []
     
