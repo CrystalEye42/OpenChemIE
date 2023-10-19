@@ -744,10 +744,6 @@ class OpenChemIE:
             'figures': table_expanded_results,
             'text': coref_expanded_results,
         }
-    
-    def backout(results, coref_results):
-        return utils.backout(results, coref_results)
-
 
 if __name__=="__main__":
     model = OpenChemIE()
