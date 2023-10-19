@@ -266,7 +266,7 @@ def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = Non
 
 
 
-def backout(results, coref_results):
+def backout_r_groups(results, coref_results):
     
     reactants = results[0]['reactions'][0]['reactants']
     products = [i['smiles'] for i in results[0]['reactions'][0]['products']]
