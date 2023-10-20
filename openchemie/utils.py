@@ -370,7 +370,7 @@ def backout(results, coref_results):
                     # delete all the molecules in other_mol correspond to the substruct
                     # and check if they number of mol frags is equal to number of r groups
                     # we do this to make sure we have the correct substruct
-                    if len(substructs) > 1:
+                    if len(substructs) >= 1:
                         for substruct in substructs:
 
                             query_to_other = {a:b for a,b in enumerate(substruct)}
