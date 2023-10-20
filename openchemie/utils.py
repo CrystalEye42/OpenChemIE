@@ -326,7 +326,7 @@ def backout(results, coref_results):
                    reactant_information[idx].append([atom['atom_symbol'], -1, -1])
                 else: 
                     has_r = True
-                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
+                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'], removeHs = False)
                     reactant_information[idx].append([atom['atom_symbol'], a_idx, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx).GetNeighbors()][0]])
 
         # if the reactant had r groups, we had to use the molecule generated from the MolBlock. 
