@@ -621,7 +621,7 @@ class OpenChemIE:
             ]
         """
         results = self.extract_reactions_from_text_in_pdf(pdf, num_pages=num_pages)
-        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
         return associate_corefs(results, results_coref)
 
     def extract_reactions_from_figures_and_tables_in_pdf(self, pdf, num_pages=None, batch_size=16, molscribe=True, ocr=True):
@@ -671,7 +671,9 @@ class OpenChemIE:
         figures = self.extract_figures_from_pdf(pdf, num_pages=num_pages, output_bbox=True)
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
-        return process_tables(figures, results, self.molscribe, batch_size=batch_size)
+        results = process_tables(figures, results, self.molscribe, batch_size=batch_size)
+        coref_results = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
+        return replace_rgroups_in_figure(figures, results, coref_results, self.molscribe, batch_size=16)
 
     def extract_reactions_from_pdf(self, pdf, num_pages=None, batch_size=16):
         """
@@ -737,8 +739,8 @@ class OpenChemIE:
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=True, ocr=True)
         table_expanded_results = process_tables(figures, results, self.molscribe, batch_size=batch_size)
-        text_results = self.extract_reactions_from_text_in_pdf(pdf, num_pages = num_pages)
-        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages = num_pages)
+        text_results = self.extract_reactions_from_text_in_pdf(pdf, num_pages=num_pages)
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
         coref_expanded_results = associate_corefs(text_results, results_coref)
         return {
             'figures': table_expanded_results,

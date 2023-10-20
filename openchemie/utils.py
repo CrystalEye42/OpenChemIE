@@ -79,8 +79,47 @@ def convert_to_cv2(image):
         image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
     return image
 
+def replace_rgroups_in_figure(figures, results, coref_results, molscribe, batch_size=16):
+    pattern = re.compile('(?P<name>[RXY]\d?)[ ]*=[ ]*(?P<group>\w+)')
+    for figure, result, corefs in zip(figures, results, coref_results):
+        r_groups = []
+        seen_r_groups = set()
+        for bbox in corefs['bboxes']:
+            if bbox['category'] == '[Idt]':
+                for text in bbox['text']:
+                    res = pattern.search(text)
+                    if res is None:
+                        continue
+                    name = res.group('name')
+                    group = res.group('group')
+                    if (name, group) in seen_r_groups:
+                        continue
+                    seen_r_groups.add((name, group))
+                    r_groups.append({name: res.group('group')})
+        if r_groups:
+            seen_r_groups = set([pair[0] for pair in seen_r_groups])
+            orig_reaction = result['reactions'][0]
+            graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, molscribe, batch_size=batch_size)
+            relevant_locs = {}
+            for i, graph in enumerate(graphs):
+                to_add = []
+                for j, atom in enumerate(graph['chartok_coords']['symbols']):
+                    if atom[1:-1] in seen_r_groups:
+                        to_add.append((atom[1:-1], j))
+                relevant_locs[i] = to_add
+
+            for r_group in r_groups:
+                reaction = get_replaced_reaction(orig_reaction, graphs, relevant_locs, r_group, molscribe)
+                to_add ={
+                    'reactants': reaction['reactants'][:],
+                    'conditions': orig_reaction['conditions'][:],
+                    'products': reaction['products'][:]
+                }
+                result['reactions'].append(to_add)
+    return results
+
 def process_tables(figures, results, molscribe, batch_size=16):
-    r_group_pattern = re.compile(r'^(\w+-)?(?P<group>\w+)( \(\w+\))?$')
+    r_group_pattern = re.compile(r'^(\w+-)?(?P<group>[\w-]+)( \(\w+\))?$')
     for figure, result in zip(figures, results):
         result['page'] = figure['page']
         if figure['table']['content'] is not None:
