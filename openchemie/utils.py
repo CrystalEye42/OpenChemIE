@@ -520,3 +520,24 @@ def associate_corefs(results, results_coref):
                             if compound[0] in coref_smiles:
                                 reaction['Product'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
     return results
+
+
+def expand_reactions_with_backout(initial_results, results_coref): 
+    for reactions, result_coref in zip(initial_results, results_coref):
+        backout_results = backout([reactions], [result_coref])
+        conditions = reactions['reactions'][0]['conditions']
+        idt_to_smiles = {}
+        for smiles, idt in backout_results:
+            idt_to_smiles[idt] = smiles
+        for coref in result_coref['corefs']:
+            idt = result_coref['bboxes'][coref[1]]['text']
+            if idt in idt_to_smiles:
+                reactants = idt_to_smiles[idt]
+                product = result_coref['bboxes'][coref[0]]['smiles']
+                reactions['reactions'].append({
+                    'reactants': [{'category': '[Mol]', 'smiles': reactant} for reactant in reactants],
+                    'conditions': conditions[:],
+                    'products': [{'category': '[Mol]', 'smiles': product}]
+                })
+    return reactions
+
