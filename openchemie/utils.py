@@ -391,7 +391,7 @@ def backout(results, coref_results):
 
                 other_prod_mol = Chem.MolFromSmiles(other_prod)
 
-                if other_prod_mol is not None:
+                if other_prod != prod_smiles and other_prod_mol is not None:
                     
                     other_prod_frags = Chem.GetMolFrags(other_prod_mol, asMols = True)
                     
