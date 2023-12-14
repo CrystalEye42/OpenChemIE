@@ -527,8 +527,10 @@ def backout(results, coref_results, molscribe):
                                         
                                         modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
 
-                            toreturn.append((modified_reactant_smiles, parsed))
+                            toreturn.append((modified_reactant_smiles, [other_prod_mol], parsed))
     return toreturn
+
+
 
 
 def associate_corefs(results, results_coref):
