@@ -325,6 +325,43 @@ Output format when extracting tables
 ]
 ```
 
+## Data
+Data for evaluating the process of R group resolution is found at [`r_group_resolution_data/`](r_group_resolution_data/). The folder contains every diagram we
+evaluated the process on, in [`r_group_resolution_data/diagrams/`](r_group_resolution_data/diagrams/), as well as corresponding notebooks that aided the annotation 
+and evaluation process for each individual diagram, located at [`r_group_resolution_data/notebooks/`](r_group_resolution_data/notebooks/).
+
+Furthermore, groundtruth annotations for each diagram is located at [`r_group_resolution_data/r_group_resolution_data.json`](r_group_resolution_data/r_group_resolution_data.json).
+The annotations take the following format: 
+```python
+[
+  {
+    "file_name": "acs.joc.2c00176 example 1.png",
+    "reaction_template": {
+      "reactants": [
+        "*C(=O)NN=CC(F)(F)F",
+        "N#CN"
+      ],
+      "products": [
+        "*C(=O)N1NC(C(F)(F)F)N=C1N"
+      ]
+    },
+    "detailed_reactions": {
+      "a": {
+        "reactants": [
+          "O=C(NN=CC(F)(F)F)c1ccccc1",
+          "N#CN"
+        ],
+        "products": [
+          "NC1=NC(C(F)(F)F)NN1C(=O)c1ccccc1"
+        ]
+      },
+      # more reactions
+    }
+  },
+  # more diagrams
+]
+```
+
 ### Loading Custom Model Checkpoints
 [Init methods for models](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L35)
 
@@ -361,4 +398,5 @@ model.init_molscribe(ckpt_path)
   - A sequence labeling model for parsing reactions from text
   - Paper: https://pubs.acs.org/doi/pdf/10.1021/acs.jcim.1c00284
   - Code: https://github.com/jiangfeng1124/ChemRxnExtractor
+
 
