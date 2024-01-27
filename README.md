@@ -11,10 +11,12 @@ First create and activate a [conda](https://numdifftools.readthedocs.io/en/stabl
 conda create -n openchemie python=3.9
 conda activate openchemie
 ```
-
-Run the following command to install the package and its dependencies
+Run the following commands to install the package and its dependencies
 ```
+conda install -c conda-forge pycocotools==2.0.4
 pip install 'OpenChemIE @ git+https://github.com/CrystalEye42/OpenChemIE'
+pip uninstall MolScribe
+pip install --no-deps 'MolScribe @ git+https://github.com/CrystalEye42/MolScribe.git@cb08600'
 ```
 
 Alternatively, for development of the package, clone and install as editable with the following
