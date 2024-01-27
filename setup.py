@@ -21,7 +21,7 @@ setup(
             "opencv-python-headless==4.5.4.60",
             "Pillow==9.5.0",
             "RxnScribe @ git+https://github.com/Ozymandias314/MolDetect.git",
-            "MolScribe @ git+https://github.com/CrystalEye42/MolScribe.git@1f2e30e",
+            "MolScribe",
             "ChemIENER @ git+https://github.com/Ozymandias314/ChemIENER.git",
             "chemrxnextractor @ git+https://github.com/CrystalEye42/ChemRxnExtractor.git@0f9529d",
             ],
