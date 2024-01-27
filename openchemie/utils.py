@@ -302,7 +302,29 @@ def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = Non
 
     return prod_mol_to_query, prod_template_mol_query
 
-
+def clean_corefs(coref_results_dict, idx):
+    label_pattern = rf'{re.escape(idx)}[a-zA-Z]+'
+    unclean_pattern = re.escape(idx) + r'\d(?![\d% ])'
+    toreturn = {}
+    for prod in coref_results_dict:
+        has_good_label = False
+        for parsed in coref_results_dict[prod]:
+            if re.search(label_pattern, parsed):
+                has_good_label = True
+        if not has_good_label:
+            for parsed in coref_results_dict[prod]:
+                search_result = re.findall(unclean_pattern, parsed)
+                if len(search_result)>0:
+                    print(search_result)
+                    for bad_label in search_result:
+                        if bad_label[1] == '1':
+                            coref_results_dict[prod].append(bad_label[0]+'l')
+                        elif bad_label[1] == '0':
+                            coref_results_dict[prod].append(bad_label[0]+'o')
+                        elif bad_label[1] == '5':
+                            coref_results_dict[prod].append(bad_label[0]+'s')
+                        elif bad_label[1] == '9':
+                            coref_results_dict[prod].append(bad_label[0]+'g')
 
 def backout(results, coref_results, molscribe):
     reactants = results[0]['reactions'][0]['reactants']
@@ -316,7 +338,7 @@ def backout(results, coref_results, molscribe):
         prod = products[0]
         if len(product_labels) == 1:
             # get the coreference label of the product molecule
-            idx = product_labels[0]
+            label_idx = product_labels[0]
         else:
             print("Warning: Malformed Label Parsed.")
             return
@@ -325,9 +347,9 @@ def backout(results, coref_results, molscribe):
         return
     
     # format the regular expression for labels that correspond to the product label
-    numbers = re.findall(r'\d+', idx)
-    idx = ''.join(numbers)
-    idx_pattern = rf'{re.escape(idx)}[a-zA-Z]+'
+    numbers = re.findall(r'\d+', label_idx)
+    label_idx = ''.join(numbers)
+    label_pattern = rf'{re.escape(label_idx)}[a-zA-Z]+'
     
 
     prod_smiles = prod
@@ -384,11 +406,14 @@ def backout(results, coref_results, molscribe):
             reactant_mols[-1] = Chem.MolFromSmiles(reactant['smiles'])
 
     #go through all the molecules in the coreference
+
+    clean_corefs(coref_results_dict, label_idx)
+
     for other_prod in coref_results_dict:
 
         #check if they match the product label regex
         for parsed in coref_results_dict[other_prod]:
-            if re.search(idx_pattern, parsed):
+            if re.search(label_pattern, parsed):
 
                 other_prod_mol = Chem.MolFromSmiles(other_prod)
 
