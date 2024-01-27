@@ -124,8 +124,10 @@ def process_tables(figures, results, molscribe, batch_size=16):
         result['page'] = figure['page']
         if figure['table']['content'] is not None:
             content = figure['table']['content']
-            if len(result['reactions']) != 1:
+            if len(result['reactions']) > 1:
                 print("Warning: multiple reactions detected for table")
+            elif len(result['reactions']) == 0:
+                continue
             orig_reaction = result['reactions'][0]
             graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, molscribe, batch_size=batch_size)
             relevant_locs = find_relevant_groups(graphs, content['columns'])
@@ -327,6 +329,8 @@ def clean_corefs(coref_results_dict, idx):
                             coref_results_dict[prod].append(bad_label[0]+'g')
 
 def backout(results, coref_results, molscribe):
+    if not results or not results[0]['reactions'] or not coref_results:
+        return
     reactants = results[0]['reactions'][0]['reactants']
     products = [i['smiles'] for i in results[0]['reactions'][0]['products']]
     coref_results_dict = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[1]]['text']  for coref in coref_results[0]['corefs']}
@@ -334,6 +338,9 @@ def backout(results, coref_results, molscribe):
      
     
     if len(products) == 1:
+        if products[0] not in coref_results_dict:
+            print("Warning: No Label Parsed")
+            return
         product_labels = coref_results_dict[products[0]]
         prod = products[0]
         if len(product_labels) == 1:
@@ -591,3 +598,39 @@ def associate_corefs(results, results_coref):
                             if compound[0] in coref_smiles:
                                 reaction['Product'][idx] = (f'{compound[0]} ({coref_smiles[compound[0]]})', compound[1], compound[2])
     return results
+
+
+def expand_reactions_with_backout(initial_results, results_coref, molscribe): 
+    idx_pattern = r'^\d+[a-zA-Z]{0,2}$'
+    for reactions, result_coref in zip(initial_results, results_coref):
+        if not reactions['reactions']:
+            continue
+        try:
+            backout_results = backout([reactions], [result_coref], molscribe)
+        except Exception:
+            continue
+        conditions = reactions['reactions'][0]['conditions']
+        idt_to_smiles = {}
+        if not backout_results:
+            continue
+        for smiles, prod, idt in backout_results:
+            idt_to_smiles[idt] = smiles
+        for coref in result_coref['corefs']:
+            idt_list = result_coref['bboxes'][coref[1]]['text']
+            if len(idt_list) == 0:
+                continue
+            idt = None
+            for text in idt_list:
+                found = re.search(idx_pattern, text)
+                if found:
+                    idt = found.group(0)
+            if idt in idt_to_smiles:
+                reactants = idt_to_smiles[idt]
+                product = result_coref['bboxes'][coref[0]]['smiles']
+                reactions['reactions'].append({
+                    'reactants': [{'category': '[Mol]', 'molfile': None, 'smiles': reactant} for reactant in reactants],
+                    'conditions': conditions[:],
+                    'products': [{'category': '[Mol]', 'molfile': None, 'smiles': product}]
+                })
+    return initial_results
+

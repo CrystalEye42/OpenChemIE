@@ -672,8 +672,10 @@ class OpenChemIE:
         images = [figure['figure']['image'] for figure in figures]
         results = self.extract_reactions_from_figures(images, batch_size=batch_size, molscribe=molscribe, ocr=ocr)
         results = process_tables(figures, results, self.molscribe, batch_size=batch_size)
-        coref_results = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
-        return replace_rgroups_in_figure(figures, results, coref_results, self.molscribe, batch_size=16)
+        results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
+        results = replace_rgroups_in_figure(figures, results, results_coref, self.molscribe, batch_size=batch_size)
+        results = expand_reactions_with_backout(results, results_coref, self.molscribe)
+        return results
 
     def extract_reactions_from_pdf(self, pdf, num_pages=None, batch_size=16):
         """
@@ -741,6 +743,8 @@ class OpenChemIE:
         table_expanded_results = process_tables(figures, results, self.molscribe, batch_size=batch_size)
         text_results = self.extract_reactions_from_text_in_pdf(pdf, num_pages=num_pages)
         results_coref = self.extract_molecule_corefs_from_figures_in_pdf(pdf, num_pages=num_pages)
+        figure_results = replace_rgroups_in_figure(figures, table_expanded_results, results_coref, self.molscribe, batch_size=batch_size)
+        table_expanded_results = expand_reactions_with_backout(figure_results, results_coref, self.molscribe)
         coref_expanded_results = associate_corefs(text_results, results_coref)
         return {
             'figures': table_expanded_results,
