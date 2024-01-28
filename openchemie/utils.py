@@ -317,7 +317,7 @@ def clean_corefs(coref_results_dict, idx):
             for parsed in coref_results_dict[prod]:
                 search_result = re.findall(unclean_pattern, parsed)
                 if len(search_result)>0:
-                    print(search_result)
+                    #print(search_result)
                     for bad_label in search_result:
                         if bad_label[1] == '1':
                             coref_results_dict[prod].append(bad_label[0]+'l')
@@ -559,7 +559,7 @@ def backout(results, coref_results, molscribe):
                                         
                                         modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
 
-                            toreturn.append((modified_reactant_smiles, [other_prod_mol], parsed))
+                            toreturn.append((modified_reactant_smiles, [Chem.MolToSmiles(other_prod_mol)], parsed))
     return toreturn
 
 
