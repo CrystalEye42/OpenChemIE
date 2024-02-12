@@ -96,7 +96,7 @@ def replace_rgroups_in_figure(figures, results, coref_results, molscribe, batch_
                         continue
                     seen_r_groups.add((name, group))
                     r_groups.append({name: res.group('group')})
-        if r_groups:
+        if r_groups and result['reactions']:
             seen_r_groups = set([pair[0] for pair in seen_r_groups])
             orig_reaction = result['reactions'][0]
             graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, molscribe, batch_size=batch_size)
