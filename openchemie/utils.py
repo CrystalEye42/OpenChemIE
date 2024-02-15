@@ -591,9 +591,10 @@ def backout(results, coref_results, molscribe):
     for other_prod in coref_results_dict:
 
         #check if they match the product label regex
+        found_good_label = False
         for parsed in coref_results_dict[other_prod]:
-            if re.search(label_pattern, parsed):
-
+            if re.search(label_pattern, parsed) and not found_good_label:
+                found_good_label = True
                 other_prod_mol = Chem.MolFromSmiles(other_prod)
 
                 if other_prod != prod_smiles and other_prod_mol is not None:
