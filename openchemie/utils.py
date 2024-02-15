@@ -599,18 +599,24 @@ def backout(results, coref_results, molscribe):
 
                     #check if there are R groups to be resolved in the target product
                     
+                    all_other_prod_mols = []
  
                     r_group_sub_pattern = re.compile('(?P<name>[RXY]\d?)[ ]*=[ ]*(?P<group>\w+)')
 
-                    res = r_group_sub_pattern.search(parsed)
+                    for parsed_labels in coref_results_dict[other_prod]:
+                        res = r_group_sub_pattern.search(parsed_labels)
 
-                    if res is not None:
+                        if res is not None:
+                            all_other_prod_mols.append((expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe), parsed + parsed_labels))
+                    
+                    if len(all_other_prod_mols) == 0:
+                        if other_prod_mol is not None:
+                            all_other_prod_mols.append((other_prod_mol, parsed))
 
-                        other_prod_mol = expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe)
-
+                    
                         
                     
-                    if other_prod_mol is not None:
+                    for other_prod_mol, parsed in all_other_prod_mols:
                     
                         other_prod_frags = Chem.GetMolFrags(other_prod_mol, asMols = True)
                         
