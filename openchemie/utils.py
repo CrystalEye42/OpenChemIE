@@ -522,7 +522,7 @@ def backout(results, coref_results, molscribe):
     
     # format the regular expression for labels that correspond to the product label
     numbers = re.findall(r'\d+', label_idx)
-    label_idx = ''.join(numbers)
+    label_idx = numbers[0] if len(numbers) > 0 else ""
     label_pattern = rf'{re.escape(label_idx)}[a-zA-Z]+'
     
 
