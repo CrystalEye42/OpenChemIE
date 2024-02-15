@@ -306,7 +306,7 @@ def get_atom_mapping(prod_mol, prod_smiles, r_sites_reversed = None):
 
 def clean_corefs(coref_results_dict, idx):
     label_pattern = rf'{re.escape(idx)}[a-zA-Z]+'
-    unclean_pattern = re.escape(idx) + r'\d(?![\d% ])'
+    #unclean_pattern = re.escape(idx) + r'\d(?![\d% ])'
     toreturn = {}
     for prod in coref_results_dict:
         has_good_label = False
@@ -315,18 +315,16 @@ def clean_corefs(coref_results_dict, idx):
                 has_good_label = True
         if not has_good_label:
             for parsed in coref_results_dict[prod]:
-                search_result = re.findall(unclean_pattern, parsed)
-                if len(search_result)>0:
-                    #print(search_result)
-                    for bad_label in search_result:
-                        if bad_label[1] == '1':
-                            coref_results_dict[prod].append(bad_label[0]+'l')
-                        elif bad_label[1] == '0':
-                            coref_results_dict[prod].append(bad_label[0]+'o')
-                        elif bad_label[1] == '5':
-                            coref_results_dict[prod].append(bad_label[0]+'s')
-                        elif bad_label[1] == '9':
-                            coref_results_dict[prod].append(bad_label[0]+'g')
+                if idx+'1' in parsed:
+                    coref_results_dict[prod].append(idx+'l')
+                elif idx+'0' in parsed:
+                    coref_results_dict[prod].append(idx+'o')
+                elif idx+'5' in parsed:
+                    coref_results_dict[prod].append(idx+'s')
+                elif idx+'9' in parsed:
+                    coref_results_dict[prod].append(idx+'g')
+
+
 
 def expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe):
     name = res.group('name')
