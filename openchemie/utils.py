@@ -250,7 +250,7 @@ def get_sites(tar, ref, ref_site = False):
                     else: sites.append(idx_pair[in_template.index(j.GetIdx())][0])
     return sites
 
-def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = None):
+def get_atom_mapping(prod_mol, prod_smiles, r_sites_reversed = None):
     # returns prod_mol_to_query which is the mapping of atom indices in prod_mol to the atom indices of the molecule represented by prod_smiles
     prod_template_intermediate = Chem.MolToSmiles(prod_mol)
     prod_template = prod_smiles
@@ -276,31 +276,31 @@ def get_atom_mapping(prod_mol, prod_smiles, prod = False, r_sites_reversed = Non
     prod_mol_to_intermediate = {b:a for a,b in idx_pair}
     
     
-    idx_pair_2 = rdDepictor.GenerateDepictionMatching2DStructure(prod_template_mol_query, prod_template_intermediate_mol_query)
+    #idx_pair_2 = rdDepictor.GenerateDepictionMatching2DStructure(prod_template_mol_query, prod_template_intermediate_mol_query)
     
-    intermediate_to_query = {a:b for a,b in idx_pair_2}
-    query_to_intermediate = {b:a for a,b in idx_pair_2}
+    #intermediate_to_query = {a:b for a,b in idx_pair_2}
+    #query_to_intermediate = {b:a for a,b in idx_pair_2}
     
-    prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
+    #prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
 
-    if prod:
-        substructs = prod_template_mol_query.GetSubstructMatches(prod_template_intermediate_mol_query, uniquify = False)
-    
-        #idx_pair_2 = rdDepictor.GenerateDepictionMatching2DStructure(prod_template_mol_query, prod_template_intermediate_mol_query)
-        for substruct in substructs:
-            
-            
-            intermediate_to_query = {a:b for a, b in enumerate(substruct)}
-            query_to_intermediate = {intermediate_to_query[i]: i for i in intermediate_to_query}
+ 
+    substructs = prod_template_mol_query.GetSubstructMatches(prod_template_intermediate_mol_query, uniquify = False)
 
-            prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
-            
-            good_map = True
-            for i in r_sites_reversed:
-                if prod_template_mol_query.GetAtomWithIdx(prod_mol_to_query[i]).GetSymbol() not in RGROUP_SMILES:
-                    good_map = False
-            if good_map:
-                break
+    #idx_pair_2 = rdDepictor.GenerateDepictionMatching2DStructure(prod_template_mol_query, prod_template_intermediate_mol_query)
+    for substruct in substructs:
+        
+        
+        intermediate_to_query = {a:b for a, b in enumerate(substruct)}
+        query_to_intermediate = {intermediate_to_query[i]: i for i in intermediate_to_query}
+
+        prod_mol_to_query = {a:intermediate_to_query[prod_mol_to_intermediate[a]] for a in prod_mol_to_intermediate}
+        
+        good_map = True
+        for i in r_sites_reversed:
+            if prod_template_mol_query.GetAtomWithIdx(prod_mol_to_query[i]).GetSymbol() not in RGROUP_SMILES:
+                good_map = False
+        if good_map:
+            break
 
     return prod_mol_to_query, prod_template_mol_query
 
@@ -327,6 +327,173 @@ def clean_corefs(coref_results_dict, idx):
                             coref_results_dict[prod].append(bad_label[0]+'s')
                         elif bad_label[1] == '9':
                             coref_results_dict[prod].append(bad_label[0]+'g')
+
+def expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe):
+    name = res.group('name')
+    group = res.group('group')
+    #print(other_prod)
+    atoms = coref_smiles_to_graphs[other_prod]['atoms']
+    bonds = coref_smiles_to_graphs[other_prod]['bonds']
+
+    #print(atoms, bonds)
+
+    graph = {
+        'image': None,
+        'chartok_coords': {
+            'coords': [],
+            'symbols': [],
+        },
+        'edges': [],
+        'key': None
+    }
+    for atom in atoms:
+        graph['chartok_coords']['coords'].append((atom['x'], atom['y']))
+        graph['chartok_coords']['symbols'].append(atom['atom_symbol'])
+    graph['edges'] = [[0] * len(atoms) for _ in range(len(atoms))]
+    for bond in bonds:
+        i, j = bond['endpoint_atoms']
+        graph['edges'][i][j] = BOND_TO_INT[bond['bond_type']]
+        graph['edges'][j][i] = BOND_TO_INT[bond['bond_type']]
+    for i, symbol in enumerate(graph['chartok_coords']['symbols']):
+        if symbol[1:-1] == name:
+            graph['chartok_coords']['symbols'][i] = group
+
+    #print(graph)
+    o = molscribe.convert_graph_to_output([graph], [graph['image']])
+    return Chem.MolFromSmiles(o[0]['smiles'])
+
+def get_r_group_frags_and_substitute(other_prod_mol, prod_template_mol_query, r_sites_reversed_new, num_r_groups, reactant_mols, reactant_information, parsed, toreturn):
+    # we get the substruct matches. note that we set uniquify to false since the order matters for our method
+    substructs = other_prod_mol.GetSubstructMatches(prod_template_mol_query, uniquify = False)
+
+    
+    #for r in r_sites_reversed:
+    #    print(prod_template_mol_query.GetAtomWithIdx(prod_mol_to_query[r]).GetSymbol())
+
+    # for each substruct we create the mapping of the substruct onto the other_mol
+    # delete all the molecules in other_mol correspond to the substruct
+    # and check if they number of mol frags is equal to number of r groups
+    # we do this to make sure we have the correct substruct
+    if len(substructs) >= 1:
+        for substruct in substructs:
+
+            query_to_other = {a:b for a,b in enumerate(substruct)}
+            other_to_query = {query_to_other[i]:i for i in query_to_other}
+
+            editable = Chem.EditableMol(other_prod_mol)
+            r_site_correspondence = []
+            for r in r_sites_reversed_new:
+                #get its id in substruct
+                substruct_id = query_to_other[r]
+                r_site_correspondence.append([substruct_id, r_sites_reversed_new[r]])
+
+            for idx in tuple(sorted(substruct, reverse = True)):
+                if idx not in [query_to_other[i] for i in r_sites_reversed_new]:
+                    editable.RemoveAtom(idx)
+                    for r_site in r_site_correspondence:
+                        if idx < r_site[0]:
+                            r_site[0]-=1
+            other_prod_removed = editable.GetMol()
+
+            if len(Chem.GetMolFrags(other_prod_removed, asMols = False)) == num_r_groups:
+                break
+
+        # need to compute the sites at which correspond to each r_site_reversed
+
+        r_site_correspondence.sort(key = lambda x: x[0])
+
+
+        f = []
+        ff = []
+        frags = Chem.GetMolFrags(other_prod_removed, asMols = True, frags = f, fragsMolAtomMapping = ff)
+
+        # r_group_information maps r group name --> the fragment/molcule corresponding to the r group and the atom index it should be connected at
+        r_group_information = {}
+        #tosubtract = 0
+        for idx, r_site in enumerate(r_site_correspondence):
+
+            r_group_information[r_site[1]]= (frags[f[r_site[0]]], ff[f[r_site[0]]].index(r_site[0]))
+            #tosubtract += len(ff[idx])
+
+        # now we modify all of the reactants according to the R groups we have found
+        # for every reactant we disconnect its r group symbol, and connect it to the r group
+        modify_reactants = copy.deepcopy(reactant_mols)
+        modified_reactant_smiles = []
+        for reactant_idx in reactant_information:
+            if len(reactant_information[reactant_idx]) == 0:
+                modified_reactant_smiles.append(Chem.MolToSmiles(modify_reactants[reactant_idx]))
+            else:
+                combined = reactant_mols[reactant_idx]
+                if combined.GetNumAtoms() == 1:
+                    r_group, _, _ = reactant_information[reactant_idx][0]
+                    modified_reactant_smiles.append(Chem.MolToSmiles(r_group_information[r_group][0]))
+                else:
+                    for r_group, r_index, connect_index in reactant_information[reactant_idx]:
+                        combined = Chem.CombineMols(combined, r_group_information[r_group][0])
+
+                    editable = Chem.EditableMol(combined)
+                    atomIdxAdder = reactant_mols[reactant_idx].GetNumAtoms()
+                    for r_group, r_index, connect_index in reactant_information[reactant_idx]:
+                        Chem.EditableMol.RemoveBond(editable, r_index, connect_index)
+                        Chem.EditableMol.AddBond(editable, connect_index, atomIdxAdder + r_group_information[r_group][1], Chem.BondType.SINGLE)
+                        atomIdxAdder += r_group_information[r_group][0].GetNumAtoms()
+                    r_indices = [i[1] for i in reactant_information[reactant_idx]]
+
+                    r_indices.sort(reverse = True)
+
+                    for r_index in r_indices:
+                        Chem.EditableMol.RemoveAtom(editable, r_index)
+
+                    modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
+
+        toreturn.append((modified_reactant_smiles, [Chem.MolToSmiles(other_prod_mol)], parsed))
+        return True 
+    else:
+        return False
+
+def query_enumeration(prod_template_mol_query, r_sites_reversed_new, num_r_groups):
+    subsets = generate_subsets(num_r_groups)
+    
+    toreturn = []
+    
+    for subset in subsets:
+        r_sites_list = [[i, r_sites_reversed_new[i]] for i in r_sites_reversed_new]
+        r_sites_list.sort(key = lambda x: x[1])
+        to_edit = Chem.EditableMol(prod_template_mol_query)
+        
+        for entry in subset:
+            pos = r_sites_list[entry][0]
+            Chem.EditableMol.RemoveBond(to_edit, r_sites_list[entry][0], prod_template_mol_query.GetAtomWithIdx(r_sites_list[entry][0]).GetNeighbors()[0].GetIdx())
+        for entry in subset:
+            pos = r_sites_list[entry][0]
+            Chem.EditableMol.RemoveAtom(to_edit, pos)
+        
+        edited = to_edit.GetMol()
+        for entry in subset: 
+            for i in range(entry + 1, num_r_groups):
+                r_sites_list[i][0]-=1
+
+        new_r_sites = {}
+        new_h_sites = set()
+        for i in range(num_r_groups):
+            if i not in subset:
+                new_r_sites[r_sites_list[i][0]] = r_sites_list[i][1]
+            else:
+                new_h_sites.add(r_sites_list[i][1])
+        toreturn.append((edited, new_r_sites, new_h_sites, num_r_groups - len(subset)))
+    return toreturn
+ 
+def generate_subsets(n):
+    def backtrack(start, subset):
+        result.append(subset[:])
+        for i in range(start, -1, -1):  # Iterate in reverse order
+            subset.append(i)
+            backtrack(i - 1, subset)
+            subset.pop()
+
+    result = []
+    backtrack(n - 1, [])
+    return sorted(result, key=lambda x: (-len(x), x), reverse=True)
 
 def backout(results, coref_results, molscribe):
     if not results or not results[0]['reactions'] or not coref_results:
@@ -374,7 +541,7 @@ def backout(results, coref_results, molscribe):
 
     #prepare the product template and get the associated mapping
 
-    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, prod = True, r_sites_reversed = r_sites_reversed)
+    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, r_sites_reversed = r_sites_reversed)
     
     reactant_mols = []
     
@@ -387,6 +554,9 @@ def backout(results, coref_results, molscribe):
         reactant_information[idx] = []
         reactant_mols.append(Chem.MolFromSmiles(reactant['smiles']))
         has_r = False
+
+        r_sites_reactant = {}
+
         for a_idx, atom in enumerate(reactant['atoms']):
             
             #go through all atoms and check if they are an R group, if so add it to reactant information
@@ -397,14 +567,16 @@ def backout(results, coref_results, molscribe):
                     has_r = True
                     reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'], removeHs = False)
                     reactant_information[idx].append([atom['atom_symbol'], a_idx, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx).GetNeighbors()][0]])
+                    r_sites_reactant[atom['atom_symbol']] = a_idx
 
+        r_sites_reversed_reactant = {r_sites_reactant[i]: i for i in r_sites_reactant}
         # if the reactant had r groups, we had to use the molecule generated from the MolBlock. 
         # but the molblock may have unexpanded elemeents that are not R groups
         # so we have to map back the r group indices in the molblock version to the full molecule generated by the smiles
         # and adjust the indices of the r groups accordingly
         if has_r:
             #get the mapping
-            reactant_mol_to_query, _ = get_atom_mapping(reactant_mols[-1], reactant['smiles'])
+            reactant_mol_to_query, _ = get_atom_mapping(reactant_mols[-1], reactant['smiles'], r_sites_reversed = r_sites_reversed_reactant)
 
             #make the adjustment
             for info in reactant_information[idx]:
@@ -434,38 +606,10 @@ def backout(results, coref_results, molscribe):
                     res = r_group_sub_pattern.search(parsed)
 
                     if res is not None:
-                        name = res.group('name')
-                        group = res.group('group')
-                        #print(other_prod)
-                        atoms = coref_smiles_to_graphs[other_prod]['atoms']
-                        bonds = coref_smiles_to_graphs[other_prod]['bonds']
 
-                        #print(atoms, bonds)
+                        other_prod_mol = expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe)
 
-                        graph = {
-                            'image': None,
-                            'chartok_coords': {
-                                'coords': [],
-                                'symbols': [],
-                            },
-                            'edges': [],
-                            'key': None
-                        }
-                        for atom in atoms:
-                            graph['chartok_coords']['coords'].append((atom['x'], atom['y']))
-                            graph['chartok_coords']['symbols'].append(atom['atom_symbol'])
-                        graph['edges'] = [[0] * len(atoms) for _ in range(len(atoms))]
-                        for bond in bonds:
-                            i, j = bond['endpoint_atoms']
-                            graph['edges'][i][j] = BOND_TO_INT[bond['bond_type']]
-                            graph['edges'][j][i] = BOND_TO_INT[bond['bond_type']]
-                        for i, symbol in enumerate(graph['chartok_coords']['symbols']):
-                            if symbol[1:-1] == name:
-                                graph['chartok_coords']['symbols'][i] = group
-
-                        #print(graph)
-                        o = molscribe.convert_graph_to_output([graph], [graph['image']])
-                        other_prod_mol = Chem.MolFromSmiles(o[0]['smiles'])
+                        
                     
                     if other_prod_mol is not None:
                     
@@ -477,89 +621,18 @@ def backout(results, coref_results, molscribe):
                             if len(substructs)>0:
                                 other_prod_mol = other_prod_frag
                                 break
+                        r_sites_reversed_new = {prod_mol_to_query[r]: r_sites_reversed[r] for r in r_sites_reversed}
 
-                        # we get the substruct matches. note that we set uniquify to false since the order matters for our method
-                        substructs = other_prod_mol.GetSubstructMatches(prod_template_mol_query, uniquify = False)
+                        queries = query_enumeration(prod_template_mol_query, r_sites_reversed_new, num_r_groups)
 
-                        # for each substruct we create the mapping of the substruct onto the other_mol
-                        # delete all the molecules in other_mol correspond to the substruct
-                        # and check if they number of mol frags is equal to number of r groups
-                        # we do this to make sure we have the correct substruct
-                        if len(substructs) >= 1:
-                            for substruct in substructs:
+                        matched = False
 
-                                query_to_other = {a:b for a,b in enumerate(substruct)}
-                                other_to_query = {query_to_other[i]:i for i in query_to_other}
-
-                                editable = Chem.EditableMol(other_prod_mol)
-                                r_site_correspondence = []
-                                for r in r_sites_reversed:
-                                    #get its id in substruct
-                                    substruct_id = query_to_other[prod_mol_to_query[r]]
-                                    r_site_correspondence.append([substruct_id, r_sites_reversed[r]])
-
-                                for idx in tuple(sorted(substruct, reverse = True)):
-                                    if idx not in [query_to_other[prod_mol_to_query[i]] for i in r_sites_reversed]:
-                                        editable.RemoveAtom(idx)
-                                        for r_site in r_site_correspondence:
-                                            if idx < r_site[0]:
-                                                r_site[0]-=1
-                                other_prod_removed = editable.GetMol()
-                                
-                                if len(Chem.GetMolFrags(other_prod_removed, asMols = False)) == num_r_groups:
-                                    break
-                            
-                            # need to compute the sites at which correspond to each r_site_reversed
-
-                            r_site_correspondence.sort(key = lambda x: x[0])
+                        for query in queries:
+                            if not matched:
+                                matched = get_r_group_frags_and_substitute(other_prod_mol, prod_template_mol_query, r_sites_reversed_new, num_r_groups, reactant_mols, reactant_information, parsed, toreturn)
                             
                             
-                            f = []
-                            ff = []
-                            frags = Chem.GetMolFrags(other_prod_removed, asMols = True, frags = f, fragsMolAtomMapping = ff)
-
-                            # r_group_information maps r group name --> the fragment/molcule corresponding to the r group and the atom index it should be connected at
-                            r_group_information = {}
-                            #tosubtract = 0
-                            for idx, r_site in enumerate(r_site_correspondence):
-
-                                r_group_information[r_site[1]]= (frags[f[r_site[0]]], ff[f[r_site[0]]].index(r_site[0]))
-                                #tosubtract += len(ff[idx])
-                                
-                            # now we modify all of the reactants according to the R groups we have found
-                            # for every reactant we disconnect its r group symbol, and connect it to the r group
-                            modify_reactants = copy.deepcopy(reactant_mols)
-                            modified_reactant_smiles = []
-                            for reactant_idx in reactant_information:
-                                if len(reactant_information[reactant_idx]) == 0:
-                                    modified_reactant_smiles.append(Chem.MolToSmiles(modify_reactants[reactant_idx]))
-                                else:
-                                    combined = reactant_mols[reactant_idx]
-                                    if combined.GetNumAtoms() == 1:
-                                        r_group, _, _ = reactant_information[reactant_idx][0]
-                                        modified_reactant_smiles.append(Chem.MolToSmiles(r_group_information[r_group][0]))
-                                    else:
-                                        for r_group, r_index, connect_index in reactant_information[reactant_idx]:
-                                            combined = Chem.CombineMols(combined, r_group_information[r_group][0])
-
-                                        editable = Chem.EditableMol(combined)
-                                        atomIdxAdder = reactant_mols[reactant_idx].GetNumAtoms()
-                                        for r_group, r_index, connect_index in reactant_information[reactant_idx]:
-                                            Chem.EditableMol.RemoveBond(editable, r_index, connect_index)
-                                            Chem.EditableMol.AddBond(editable, connect_index, atomIdxAdder + r_group_information[r_group][1], Chem.BondType.SINGLE)
-                                            atomIdxAdder += r_group_information[r_group][0].GetNumAtoms()
-                                        r_indices = [i[1] for i in reactant_information[reactant_idx]]
-                                        
-                                        r_indices.sort(reverse = True)
-                                        
-
-                                        
-                                        for r_index in r_indices:
-                                            Chem.EditableMol.RemoveAtom(editable, r_index)
-                                        
-                                        modified_reactant_smiles.append(Chem.MolToSmiles(Chem.MolFromSmiles(Chem.MolToSmiles(editable.GetMol()))))
-
-                            toreturn.append((modified_reactant_smiles, [Chem.MolToSmiles(other_prod_mol)], parsed))
+         
     return toreturn
 
 
