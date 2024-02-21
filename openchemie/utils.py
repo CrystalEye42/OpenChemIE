@@ -360,7 +360,8 @@ def expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscri
     o = molscribe.convert_graph_to_output([graph], [graph['image']])
     return Chem.MolFromSmiles(o[0]['smiles'])
 
-def get_r_group_frags_and_substitute(other_prod_mol, prod_template_mol_query, r_sites_reversed_new, num_r_groups, reactant_mols, reactant_information, parsed, toreturn):
+def get_r_group_frags_and_substitute(other_prod_mol, query, reactant_mols, reactant_information, parsed, toreturn):
+    prod_template_mol_query, r_sites_reversed_new, h_sites, num_r_groups = query
     # we get the substruct matches. note that we set uniquify to false since the order matters for our method
     substructs = other_prod_mol.GetSubstructMatches(prod_template_mol_query, uniquify = False)
 
@@ -412,6 +413,8 @@ def get_r_group_frags_and_substitute(other_prod_mol, prod_template_mol_query, r_
 
             r_group_information[r_site[1]]= (frags[f[r_site[0]]], ff[f[r_site[0]]].index(r_site[0]))
             #tosubtract += len(ff[idx])
+        for r_site in h_sites:
+            r_group_information[r_site] = (Chem.MolFromSmiles('[H]'), 0)
 
         # now we modify all of the reactants according to the R groups we have found
         # for every reactant we disconnect its r group symbol, and connect it to the r group
@@ -650,7 +653,10 @@ def backout(results, coref_results, molscribe):
 
                         for query in queries:
                             if not matched:
-                                matched = get_r_group_frags_and_substitute(other_prod_mol, prod_template_mol_query, r_sites_reversed_new, num_r_groups, reactant_mols, reactant_information, parsed, toreturn)
+                                try:
+                                    matched = get_r_group_frags_and_substitute(other_prod_mol, query, reactant_mols, reactant_information, parsed, toreturn)
+                                except:
+                                    pass
                             
                             
          
