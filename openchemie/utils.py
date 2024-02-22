@@ -459,7 +459,7 @@ def query_enumeration(prod_template_mol_query, r_sites_reversed_new, num_r_group
     
     for subset in subsets:
         r_sites_list = [[i, r_sites_reversed_new[i]] for i in r_sites_reversed_new]
-        r_sites_list.sort(key = lambda x: x[1])
+        r_sites_list.sort(key = lambda x: x[0])
         to_edit = Chem.EditableMol(prod_template_mol_query)
         
         for entry in subset:
