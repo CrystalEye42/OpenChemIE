@@ -534,11 +534,17 @@ def backout(results, coref_results, molscribe):
     r_sites = {}
     for idx, atom in enumerate(results[0]['reactions'][0]['products'][0]['atoms']):
         if atom['atom_symbol'] in RGROUP_SYMBOLS:
-            r_sites[atom['atom_symbol']] = idx
+            if atom['atom_symbol'] not in r_sites:
+                r_sites[atom['atom_symbol']] = [idx]
+            else:
+                r_sites[atom['atom_symbol']].append(idx)
     
-    r_sites_reversed = {r_sites[i]: i for i in r_sites}
+    r_sites_reversed = {}
+    for sym in r_sites:
+        for pos in r_sites[sym]:
+            r_sites_reversed[pos] = sym
     
-    num_r_groups = len(r_sites)
+    num_r_groups = len(r_sites_reversed)
 
     #prepare the product template and get the associated mapping
 
