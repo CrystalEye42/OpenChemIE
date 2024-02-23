@@ -531,13 +531,16 @@ def backout(results, coref_results, molscribe):
     prod_mol = Chem.MolFromMolBlock(results[0]['reactions'][0]['products'][0]['molfile'])
     
     # identify the atom indices of the R groups in the product tempalte
+    h_counter = 0
     r_sites = {}
     for idx, atom in enumerate(results[0]['reactions'][0]['products'][0]['atoms']):
+        if atom['atom_symbol'] == 'H':
+            h_counter += 1
         if atom['atom_symbol'] in RGROUP_SYMBOLS:
             if atom['atom_symbol'] not in r_sites:
-                r_sites[atom['atom_symbol']] = [idx]
+                r_sites[atom['atom_symbol']] = [idx-h_counter]
             else:
-                r_sites[atom['atom_symbol']].append(idx)
+                r_sites[atom['atom_symbol']].append(idx-h_counter)
     
     r_sites_reversed = {}
     for sym in r_sites:
