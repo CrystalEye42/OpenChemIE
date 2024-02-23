@@ -534,7 +534,7 @@ def backout(results, coref_results, molscribe):
     h_counter = 0
     r_sites = {}
     for idx, atom in enumerate(results[0]['reactions'][0]['products'][0]['atoms']):
-        if atom['atom_symbol'] == 'H':
+        if atom['atom_symbol'] == '[H]':
             h_counter += 1
         if atom['atom_symbol'] in RGROUP_SYMBOLS:
             if atom['atom_symbol'] not in r_sites:
