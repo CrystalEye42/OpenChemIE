@@ -499,87 +499,48 @@ def generate_subsets(n):
     return sorted(result, key=lambda x: (-len(x), x), reverse=True)
 
 def backout(results, coref_results, molscribe):
-    if not results or not results[0]['reactions'] or not coref_results:
-        return
-    reactants = results[0]['reactions'][0]['reactants']
-    products = [i['smiles'] for i in results[0]['reactions'][0]['products']]
-    coref_results_dict = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[1]]['text']  for coref in coref_results[0]['corefs']}
-    coref_smiles_to_graphs = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[0]]  for coref in coref_results[0]['corefs']}
-     
-    
-    if len(products) == 1:
-        if products[0] not in coref_results_dict:
-            print("Warning: No Label Parsed")
-            return
-        product_labels = coref_results_dict[products[0]]
-        prod = products[0]
-        if len(product_labels) == 1:
-            # get the coreference label of the product molecule
-            label_idx = product_labels[0]
-        else:
-            print("Warning: Malformed Label Parsed.")
-            return
-    else:
-        print("Warning: More than one product detected")
-        return
-    
-    # format the regular expression for labels that correspond to the product label
-    numbers = re.findall(r'\d+', label_idx)
-    label_idx = numbers[0] if len(numbers) > 0 else ""
-    label_pattern = rf'{re.escape(label_idx)}[a-zA-Z]+'
-    
 
-    prod_smiles = prod
-    prod_mol = Chem.MolFromMolBlock(results[0]['reactions'][0]['products'][0]['molfile'])
-    
-    # identify the atom indices of the R groups in the product tempalte
-    h_counter = 0
-    r_sites = {}
-    for idx, atom in enumerate(results[0]['reactions'][0]['products'][0]['atoms']):
-        sym = atom['atom_symbol']
-        if sym == '[H]':
-            h_counter += 1
-        if sym[0] == '[':
-            sym = sym[1:-1]
-            if sym[0] == 'R' and sym[1:].isdigit():
-                sym = sym[1:]+"*"
-            sym = f'[{sym}]'
-        if sym in RGROUP_SYMBOLS:
-            if sym not in r_sites:
-                r_sites[sym] = [idx-h_counter]
-            else:
-                r_sites[sym].append(idx-h_counter)
-    
-    r_sites_reversed = {}
-    for sym in r_sites:
-        for pos in r_sites[sym]:
-            r_sites_reversed[pos] = sym
-    
-    num_r_groups = len(r_sites_reversed)
-
-    #prepare the product template and get the associated mapping
-
-    prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, r_sites_reversed = r_sites_reversed)
-    
-    reactant_mols = []
-    
     toreturn = []
-    #--------------process the reactants-----------------
-    
-    reactant_information = {} #index of relevant reaction --> [[R group name, atom index of R group, atom index of R group connection], ...]
-    
-    for idx, reactant in enumerate(reactants):
-        reactant_information[idx] = []
-        reactant_mols.append(Chem.MolFromSmiles(reactant['smiles']))
-        has_r = False
 
-        r_sites_reactant = {}
+    if not results or not results[0]['reactions'] or not coref_results:
+        return toreturn
+
+    try:
+        reactants = results[0]['reactions'][0]['reactants']
+        products = [i['smiles'] for i in results[0]['reactions'][0]['products']]
+        coref_results_dict = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[1]]['text']  for coref in coref_results[0]['corefs']}
+        coref_smiles_to_graphs = {coref_results[0]['bboxes'][coref[0]]['smiles']: coref_results[0]['bboxes'][coref[0]]  for coref in coref_results[0]['corefs']}
         
-        h_counter = 0
+        
+        if len(products) == 1:
+            if products[0] not in coref_results_dict:
+                print("Warning: No Label Parsed")
+                return
+            product_labels = coref_results_dict[products[0]]
+            prod = products[0]
+            if len(product_labels) == 1:
+                # get the coreference label of the product molecule
+                label_idx = product_labels[0]
+            else:
+                print("Warning: Malformed Label Parsed.")
+                return
+        else:
+            print("Warning: More than one product detected")
+            return
+        
+        # format the regular expression for labels that correspond to the product label
+        numbers = re.findall(r'\d+', label_idx)
+        label_idx = numbers[0] if len(numbers) > 0 else ""
+        label_pattern = rf'{re.escape(label_idx)}[a-zA-Z]+'
+        
 
-        for a_idx, atom in enumerate(reactant['atoms']):
-            
-            #go through all atoms and check if they are an R group, if so add it to reactant information
+        prod_smiles = prod
+        prod_mol = Chem.MolFromMolBlock(results[0]['reactions'][0]['products'][0]['molfile'])
+        
+        # identify the atom indices of the R groups in the product tempalte
+        h_counter = 0
+        r_sites = {}
+        for idx, atom in enumerate(results[0]['reactions'][0]['products'][0]['atoms']):
             sym = atom['atom_symbol']
             if sym == '[H]':
                 h_counter += 1
@@ -588,103 +549,149 @@ def backout(results, coref_results, molscribe):
                 if sym[0] == 'R' and sym[1:].isdigit():
                     sym = sym[1:]+"*"
                 sym = f'[{sym}]'
-            if sym in r_sites:
-                if reactant_mols[-1].GetNumAtoms()==1:
-                   reactant_information[idx].append([sym, -1, -1])
-                else: 
-                    has_r = True
-                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
-                    reactant_information[idx].append([sym, a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
-                    r_sites_reactant[sym] = a_idx-h_counter
-            elif sym == '[1*]' and '[7*]' in r_sites:
-                if reactant_mols[-1].GetNumAtoms()==1:
-                   reactant_information[idx].append(['[7*]', -1, -1])
-                else: 
-                    has_r = True
-                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
-                    reactant_information[idx].append(['[7*]', a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
-                    r_sites_reactant['[7*]'] = a_idx-h_counter
-            elif sym == '[7*]' and '[1*]' in r_sites:
-                if reactant_mols[-1].GetNumAtoms()==1:
-                   reactant_information[idx].append(['[1*]', -1, -1])
-                else: 
-                    has_r = True
-                    reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
-                    reactant_information[idx].append(['[1*]', a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
-                    r_sites_reactant['[1*]'] = a_idx-h_counter
+            if sym in RGROUP_SYMBOLS:
+                if sym not in r_sites:
+                    r_sites[sym] = [idx-h_counter]
+                else:
+                    r_sites[sym].append(idx-h_counter)
+        
+        r_sites_reversed = {}
+        for sym in r_sites:
+            for pos in r_sites[sym]:
+                r_sites_reversed[pos] = sym
+        
+        num_r_groups = len(r_sites_reversed)
 
-        r_sites_reversed_reactant = {r_sites_reactant[i]: i for i in r_sites_reactant}
-        # if the reactant had r groups, we had to use the molecule generated from the MolBlock. 
-        # but the molblock may have unexpanded elemeents that are not R groups
-        # so we have to map back the r group indices in the molblock version to the full molecule generated by the smiles
-        # and adjust the indices of the r groups accordingly
-        if has_r:
-            #get the mapping
-            reactant_mol_to_query, _ = get_atom_mapping(reactant_mols[-1], reactant['smiles'], r_sites_reversed = r_sites_reversed_reactant)
+        #prepare the product template and get the associated mapping
 
-            #make the adjustment
-            for info in reactant_information[idx]:
-                info[1] = reactant_mol_to_query[info[1]]
-                info[2] = reactant_mol_to_query[info[2]]
-            reactant_mols[-1] = Chem.MolFromSmiles(reactant['smiles'])
+        prod_mol_to_query, prod_template_mol_query = get_atom_mapping(prod_mol, prod_smiles, r_sites_reversed = r_sites_reversed)
+        
+        reactant_mols = []
+        
+        
+        #--------------process the reactants-----------------
+        
+        reactant_information = {} #index of relevant reaction --> [[R group name, atom index of R group, atom index of R group connection], ...]
+        
+        for idx, reactant in enumerate(reactants):
+            reactant_information[idx] = []
+            reactant_mols.append(Chem.MolFromSmiles(reactant['smiles']))
+            has_r = False
 
-    #go through all the molecules in the coreference
+            r_sites_reactant = {}
+            
+            h_counter = 0
 
-    clean_corefs(coref_results_dict, label_idx)
+            for a_idx, atom in enumerate(reactant['atoms']):
+                
+                #go through all atoms and check if they are an R group, if so add it to reactant information
+                sym = atom['atom_symbol']
+                if sym == '[H]':
+                    h_counter += 1
+                if sym[0] == '[':
+                    sym = sym[1:-1]
+                    if sym[0] == 'R' and sym[1:].isdigit():
+                        sym = sym[1:]+"*"
+                    sym = f'[{sym}]'
+                if sym in r_sites:
+                    if reactant_mols[-1].GetNumAtoms()==1:
+                        reactant_information[idx].append([sym, -1, -1])
+                    else: 
+                        has_r = True
+                        reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
+                        reactant_information[idx].append([sym, a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
+                        r_sites_reactant[sym] = a_idx-h_counter
+                elif sym == '[1*]' and '[7*]' in r_sites:
+                    if reactant_mols[-1].GetNumAtoms()==1:
+                        reactant_information[idx].append(['[7*]', -1, -1])
+                    else: 
+                        has_r = True
+                        reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
+                        reactant_information[idx].append(['[7*]', a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
+                        r_sites_reactant['[7*]'] = a_idx-h_counter
+                elif sym == '[7*]' and '[1*]' in r_sites:
+                    if reactant_mols[-1].GetNumAtoms()==1:
+                        reactant_information[idx].append(['[1*]', -1, -1])
+                    else: 
+                        has_r = True
+                        reactant_mols[-1] = Chem.MolFromMolBlock(reactant['molfile'])
+                        reactant_information[idx].append(['[1*]', a_idx-h_counter, [i.GetIdx() for i in reactant_mols[-1].GetAtomWithIdx(a_idx-h_counter).GetNeighbors()][0]])
+                        r_sites_reactant['[1*]'] = a_idx-h_counter
 
-    for other_prod in coref_results_dict:
+            r_sites_reversed_reactant = {r_sites_reactant[i]: i for i in r_sites_reactant}
+            # if the reactant had r groups, we had to use the molecule generated from the MolBlock. 
+            # but the molblock may have unexpanded elemeents that are not R groups
+            # so we have to map back the r group indices in the molblock version to the full molecule generated by the smiles
+            # and adjust the indices of the r groups accordingly
+            if has_r:
+                #get the mapping
+                reactant_mol_to_query, _ = get_atom_mapping(reactant_mols[-1], reactant['smiles'], r_sites_reversed = r_sites_reversed_reactant)
 
-        #check if they match the product label regex
-        found_good_label = False
-        for parsed in coref_results_dict[other_prod]:
-            if re.search(label_pattern, parsed) and not found_good_label:
-                found_good_label = True
-                other_prod_mol = Chem.MolFromSmiles(other_prod)
+                #make the adjustment
+                for info in reactant_information[idx]:
+                    info[1] = reactant_mol_to_query[info[1]]
+                    info[2] = reactant_mol_to_query[info[2]]
+                reactant_mols[-1] = Chem.MolFromSmiles(reactant['smiles'])
 
-                if other_prod != prod_smiles and other_prod_mol is not None:
+        #go through all the molecules in the coreference
 
-                    #check if there are R groups to be resolved in the target product
-                    
-                    all_other_prod_mols = []
- 
-                    r_group_sub_pattern = re.compile('(?P<name>[RXY]\d?)[ ]*=[ ]*(?P<group>\w+)')
+        clean_corefs(coref_results_dict, label_idx)
 
-                    for parsed_labels in coref_results_dict[other_prod]:
-                        res = r_group_sub_pattern.search(parsed_labels)
+        for other_prod in coref_results_dict:
 
-                        if res is not None:
-                            all_other_prod_mols.append((expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe), parsed + parsed_labels))
-                    
-                    if len(all_other_prod_mols) == 0:
-                        if other_prod_mol is not None:
-                            all_other_prod_mols.append((other_prod_mol, parsed))
+            #check if they match the product label regex
+            found_good_label = False
+            for parsed in coref_results_dict[other_prod]:
+                if re.search(label_pattern, parsed) and not found_good_label:
+                    found_good_label = True
+                    other_prod_mol = Chem.MolFromSmiles(other_prod)
 
-                    
+                    if other_prod != prod_smiles and other_prod_mol is not None:
+
+                        #check if there are R groups to be resolved in the target product
                         
-                    
-                    for other_prod_mol, parsed in all_other_prod_mols:
-                    
-                        other_prod_frags = Chem.GetMolFrags(other_prod_mol, asMols = True)
+                        all_other_prod_mols = []
+    
+                        r_group_sub_pattern = re.compile('(?P<name>[RXY]\d?)[ ]*=[ ]*(?P<group>\w+)')
+
+                        for parsed_labels in coref_results_dict[other_prod]:
+                            res = r_group_sub_pattern.search(parsed_labels)
+
+                            if res is not None:
+                                all_other_prod_mols.append((expand_r_group_label_helper(res, coref_smiles_to_graphs, other_prod, molscribe), parsed + parsed_labels))
                         
-                        for other_prod_frag in other_prod_frags:
-                            substructs = other_prod_frag.GetSubstructMatches(prod_template_mol_query, uniquify = False)
+                        if len(all_other_prod_mols) == 0:
+                            if other_prod_mol is not None:
+                                all_other_prod_mols.append((other_prod_mol, parsed))
+
+                        
                             
-                            if len(substructs)>0:
-                                other_prod_mol = other_prod_frag
-                                break
-                        r_sites_reversed_new = {prod_mol_to_query[r]: r_sites_reversed[r] for r in r_sites_reversed}
-
-                        queries = query_enumeration(prod_template_mol_query, r_sites_reversed_new, num_r_groups)
-
-                        matched = False
-
-                        for query in queries:
-                            if not matched:
-                                try:
-                                    matched = get_r_group_frags_and_substitute(other_prod_mol, query, reactant_mols, reactant_information, parsed, toreturn)
-                                except:
-                                    pass
+                        
+                        for other_prod_mol, parsed in all_other_prod_mols:
+                        
+                            other_prod_frags = Chem.GetMolFrags(other_prod_mol, asMols = True)
                             
+                            for other_prod_frag in other_prod_frags:
+                                substructs = other_prod_frag.GetSubstructMatches(prod_template_mol_query, uniquify = False)
+                                
+                                if len(substructs)>0:
+                                    other_prod_mol = other_prod_frag
+                                    break
+                            r_sites_reversed_new = {prod_mol_to_query[r]: r_sites_reversed[r] for r in r_sites_reversed}
+
+                            queries = query_enumeration(prod_template_mol_query, r_sites_reversed_new, num_r_groups)
+
+                            matched = False
+
+                            for query in queries:
+                                if not matched:
+                                    try:
+                                        matched = get_r_group_frags_and_substitute(other_prod_mol, query, reactant_mols, reactant_information, parsed, toreturn)
+                                    except:
+                                        pass
+
+    except:
+        pass                          
                             
          
     return toreturn
