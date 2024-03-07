@@ -132,9 +132,11 @@ def process_tables(figures, results, molscribe, batch_size=16):
             orig_reaction = result['reactions'][0]
             graphs = get_atoms_and_bonds(figure['figure']['image'], orig_reaction, molscribe, batch_size=batch_size)
             relevant_locs = find_relevant_groups(graphs, content['columns'])
+            conditions_to_extend = []
             for row in content['rows']:
                 r_groups = {}
                 expanded_conditions = orig_reaction['conditions'][:]
+                replaced = False
                 for col, entry in zip(content['columns'], row):
                     if col['tag'] != 'alkyl group':
                         expanded_conditions.append({
@@ -147,13 +149,19 @@ def process_tables(figures, results, molscribe, batch_size=16):
                         found = r_group_pattern.match(entry['text'])
                         if found is not None:
                             r_groups[col['text']] = found.group('group')
+                            replaced = True
                 reaction = get_replaced_reaction(orig_reaction, graphs, relevant_locs, r_groups, molscribe)  
-                to_add ={
-                    'reactants': reaction['reactants'][:],
-                    'conditions': expanded_conditions,
-                    'products': reaction['products'][:]
-                }
-                result['reactions'].append(to_add)
+                if replaced:
+                    to_add = {
+                        'reactants': reaction['reactants'][:],
+                        'conditions': expanded_conditions,
+                        'products': reaction['products'][:]
+                    }
+                    result['reactions'].append(to_add)
+                else:
+                    conditions_to_extend.append(expanded_conditions)
+            orig_reaction['conditions'] = [orig_reaction['conditions']]
+            orig_reaction['conditions'].extend(conditions_to_extend)
     return results
 
 
@@ -163,7 +171,7 @@ def get_atoms_and_bonds(image, reaction, molscribe, batch_size=16):
     results = []
     for key, molecules in reaction.items():
         for i, elt in enumerate(molecules):
-            if elt['category'] != '[Mol]':
+            if type(elt) != dict or elt['category'] != '[Mol]':
                 continue
             x1, y1, x2, y2 = elt['bbox']
             height, width, _ = image.shape
@@ -218,15 +226,24 @@ def get_replaced_reaction(orig_reaction, graphs, relevant_locs, mappings, molscr
             if atom in mappings:
                 graph_copy[graph_idx]['chartok_coords']['symbols'][atom_idx] = mappings[atom]
     reaction_copy = {}
+    def append_copy(copy_list, entity):    
+        if entity['category'] == '[Mol]':
+            copy_list.append({
+                k1: v1 for k1, v1 in entity.items()
+            })
+        else:
+            copy_list.append(entity)
+
     for k, v in orig_reaction.items():
         reaction_copy[k] = []
         for entity in v:
-            if entity['category'] == '[Mol]':
-                reaction_copy[k].append({
-                    k1: v1 for k1, v1 in entity.items()
-                })
+            if type(entity) == list:
+                sub_list = []
+                for e in entity:
+                    append_copy(sub_list, e)
+                reaction_copy[k].append(sub_list)
             else:
-                reaction_copy[k].append(entity)
+                append_copy(reaction_copy[k], entity)
 
     for graph in graph_copy:
         output = molscribe.convert_graph_to_output([graph], [graph['image']])

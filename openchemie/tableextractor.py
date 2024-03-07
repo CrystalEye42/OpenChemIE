@@ -114,7 +114,7 @@ class TableExtractor(object):
             i = 1
             g = [w[0]]
 
-            while w[i][3] > w[i-1][1]:
+            while i < len(w) and w[i][3] > w[i-1][1]:
                 g.append(w[i])
                 i += 1
             g = sorted(g, key=itemgetter(0))
@@ -199,7 +199,7 @@ class TableExtractor(object):
                     else:
                         added_row.append(t[4].strip())
                 ret["rows"].append(added_row)
-            if len(ret["rows"][0]) != len(ret["columns"]):
+            if ret["rows"] and len(ret["rows"][0]) != len(ret["columns"]):
                 ret["columns"] = ret["rows"][0]
                 ret["rows"] = ret["rows"][1:]
                 for col in ret['columns']:
