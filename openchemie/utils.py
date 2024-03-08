@@ -764,24 +764,12 @@ def expand_reactions_with_backout(initial_results, results_coref, molscribe):
         idt_to_smiles = {}
         if not backout_results:
             continue
-        for smiles, prod, idt in backout_results:
-            idt_to_smiles[idt] = smiles
-        for coref in result_coref['corefs']:
-            idt_list = result_coref['bboxes'][coref[1]]['text']
-            if len(idt_list) == 0:
-                continue
-            idt = None
-            for text in idt_list:
-                found = re.search(idx_pattern, text)
-                if found:
-                    idt = found.group(0)
-            if idt in idt_to_smiles:
-                reactants = idt_to_smiles[idt]
-                product = result_coref['bboxes'][coref[0]]['smiles']
-                reactions['reactions'].append({
-                    'reactants': [{'category': '[Mol]', 'molfile': None, 'smiles': reactant} for reactant in reactants],
-                    'conditions': conditions[:],
-                    'products': [{'category': '[Mol]', 'molfile': None, 'smiles': product}]
-                })
+
+        for reactants, products, idt in backout_results:
+            reactions['reactions'].append({
+                'reactants': [{'category': '[Mol]', 'molfile': None, 'smiles': reactant} for reactant in reactants],
+                'conditions': conditions[:],
+                'products': [{'category': '[Mol]', 'molfile': None, 'smiles': product} for product in products]
+             })
     return initial_results
 
