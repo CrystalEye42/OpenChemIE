@@ -328,7 +328,7 @@ Output format when extracting tables
 ```
 
 ## Data
-Data for evaluating the process of R group resolution is found at [`r_group_resolution_data/`]([r_group_resolution_data/](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main)). The folder contains every diagram we
+Data for evaluating the process of R group resolution is found at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main. The folder contains every diagram we
 evaluated the process on, in [`r_group_resolution_data/diagrams/`](r_group_resolution_data/diagrams/), as well as corresponding notebooks that aided the annotation 
 and evaluation process for each individual diagram, located at [`r_group_resolution_data/notebooks/`](r_group_resolution_data/notebooks/).
 
