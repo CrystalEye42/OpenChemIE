@@ -328,11 +328,8 @@ Output format when extracting tables
 ```
 
 ## Data
-Data for evaluating the process of R group resolution is found at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main. The folder contains every diagram we
-evaluated the process on, in [`r_group_resolution_data/diagrams/`](r_group_resolution_data/diagrams/), as well as corresponding notebooks that aided the annotation 
-and evaluation process for each individual diagram, located at [`r_group_resolution_data/notebooks/`](r_group_resolution_data/notebooks/).
+Data for evaluating the process of R group resolution is found at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main. The huggingface repository contains every diagram in the dataset at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_diagrams.zip as well as groundtruth annotations at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_data.json.
 
-Furthermore, groundtruth annotations for each diagram is located at [`r_group_resolution_data/r_group_resolution_data.json`](r_group_resolution_data/r_group_resolution_data.json).
 The annotations take the following format: 
 ```python
 [
