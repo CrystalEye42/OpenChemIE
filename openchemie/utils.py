@@ -518,12 +518,15 @@ def backout(results, coref_results, molscribe):
                 return
             product_labels = coref_results_dict[products[0]]
             prod = products[0]
+            label_idx = product_labels[0]
+            '''
             if len(product_labels) == 1:
                 # get the coreference label of the product molecule
                 label_idx = product_labels[0]
             else:
                 print("Warning: Malformed Label Parsed.")
                 return
+            '''
         else:
             print("Warning: More than one product detected")
             return
