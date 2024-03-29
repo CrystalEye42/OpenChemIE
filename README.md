@@ -328,7 +328,7 @@ Output format when extracting tables
 ```
 
 ## Data
-Data for evaluating the process of R group resolution is found at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main. The huggingface repository contains every diagram in the dataset at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_diagrams.zip as well as groundtruth annotations at https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_data.json.
+Data for evaluating the process of R group resolution is found at this [huggingface repository](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main). The huggingface repository contains every diagram in the dataset [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_diagrams.zip) as well as groundtruth annotations [here]( https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_data.json).
 
 The annotations take the following format: 
 ```python
@@ -360,6 +360,10 @@ The annotations take the following format:
   # more diagrams
 ]
 ```
+
+Additionally, jupyter notebooks used during the annotation process can be downloaded [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_annotation_notebooks.zip). 
+
+Diagrams and data used in the comparison against Reaxys can also be found in the same huggingface repository. 
 
 ### Loading Custom Model Checkpoints
 [Init methods for models](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L35)
