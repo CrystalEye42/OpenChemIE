@@ -4,6 +4,17 @@ Authors: Yujie Qian, Alex Wang, Vincent Fan, Amber Wang, Regina Barzilay *(MIT C
 OpenChemIE is an open source toolkit for aiding with chemistry information extraction by offering methods for extracting molecule or reaction data from figures or text. Given PDFs from chemistry literature, we run specialized machine learning models to efficiently extract structured data. For text analysis, we provide methods for named entity recognition and reaction extraction. For figure analysis, we offer methods for molecule detection, text-figure coreference, molecule recognition, and reaction diagram parsing. For more information on the models involved, [see below](#models-in-openchemie). 
 
 ## Citation
+If you use OpenChemIE in your research, please cite our [paper](https://arxiv.org/abs/2404.01462).
+```
+@misc{fan2024openchemie,
+      title={OpenChemIE: An Information Extraction Toolkit For Chemistry Literature}, 
+      author={Vincent Fan and Yujie Qian and Alex Wang and Amber Wang and Connor W. Coley and Regina Barzilay},
+      year={2024},
+      eprint={2404.01462},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
 
 ## Installation
 First create and activate a [conda](https://numdifftools.readthedocs.io/en/stable/how-to/create_virtual_env_with_conda.html) virtual environment with the following
@@ -16,7 +27,7 @@ Run the following commands to install the package and its dependencies
 conda install -c conda-forge pycocotools==2.0.4
 pip install 'OpenChemIE @ git+https://github.com/CrystalEye42/OpenChemIE'
 pip uninstall MolScribe
-pip install --no-deps 'MolScribe @ git+https://github.com/CrystalEye42/MolScribe.git@cb08600'
+pip install --no-deps 'MolScribe @ git+https://github.com/CrystalEye42/MolScribe.git@250f683'
 ```
 
 Alternatively, for development of the package, clone and install as editable with the following
@@ -41,6 +52,9 @@ model = OpenChemIE(device=torch.device('cpu')) # change to cuda for gpu
  - [extract_molecules_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L513)
  - [extract_reactions_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L404)
  - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L560)
+ - [extract_reactions_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L680)
+ - [extract_reactions_from_text_in_pdf_combined](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L594)
+ - [extract_reactions_from_figures_and_tables_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L627)
  - [extract_molecule_corefs_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L336)
  - [extract_molecules_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L303)
  - [extract_reactions_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L457)
@@ -110,8 +124,8 @@ Output when extracting molecules from text has the following format
 
 ### Extracting Reaction Information From PDFs
 These methods are for parsing reaction schemes and conditions from figures or from text. 
- - [extract_reactions_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L404)
- - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L560)
+ - [extract_reactions_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L405)
+ - [extract_reactions_from_text_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L561)
 
 ```python
 import torch
@@ -186,9 +200,87 @@ Output when extracting reactions from text has the following format
 ]
 ```
 
+### Multimodal Reaction Extraction from PDFs
+These methods combine information across figures, text, and/or tables to extract a more comprehensive set of reactions.
+ - [extract_reactions_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L680)
+ - [extract_reactions_from_text_in_pdf_combined](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L594)
+ - [extract_reactions_from_figures_and_tables_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L627)
+```python
+import torch
+from openchemie import OpenChemIE
+
+model = OpenChemIE()
+pdf_path = 'example/acs.joc.2c00749.pdf'
+full_results = model.extract_reactions_from_pdf(pdf_path)
+
+# following results are already contained in full results
+resolved_text_results = model.extract_reactions_from_text_in_pdf_combined(pdf_path)
+figure_table_results = model.extract_reactions_from_figures_and_tables_in_pdf(pdf_path)
+```
+
+The output when extracting the full results has the following format
+```
+{
+    'figures': [
+        {
+            'figure': PIL image
+            'reactions': [
+                {
+                    'reactants': [
+                        {
+                            'category': str,
+                            'bbox': tuple (x1,x2,y1,y2),
+                            'category_id': int,
+                            'smiles': str,
+                            'molfile': str,
+                        },
+                        # more reactants
+                    ],
+                    'conditions': [
+                        {
+                            'category': str,
+                            'text': list of str,
+                        },
+                        # more conditions
+                    ],
+                    'products': [
+                        # same structure as reactants
+                    ]
+                },
+                # more reactions
+            ],
+            'page': int
+        },
+        # more figures
+    ]
+    'text': [
+        {
+            'page': page number
+            'reactions': [
+                {
+                    'tokens': list of words in relevant sentence,
+                    'reactions' : [
+                        {
+                            # key, value pairs where key is the label and value is a tuple
+                            # or list of tuples of the form (tokens, start index, end index)
+                            # where indices are for the corresponding token list and start and end are inclusive
+                        }
+                        # more reactions
+                    ]
+                }
+                # more reactions in other sentences
+            ]
+        },
+        # more pages
+    ]
+}
+```
+The output when extracting from text and resolving coreferences has the same format as the value associated with the `'text'` key when extracting the full results.
+Similarly, the output when extracting from figures and tables has the same format as the value of the `'figures'` key in the full results.
+
 ### Extracting Molecule Corefs From PDFs
 This method is for resolving coreferences between molecules in the figure and labels in the text.
- - [extract_molecule_corefs_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L336)
+ - [extract_molecule_corefs_from_figures_in_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L337)
 
 ```python
 import torch
@@ -225,10 +317,10 @@ The output has the following format
 ### Extracting From a List of Figures
 The previous methods were for extracting directly from a PDF file. Below, we provide corresponding methods for extracting from a list of figure images instead. 
 
- - [extract_molecules_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L303)
- - [extract_reactions_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L457)
- - [extract_molecule_bboxes_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L279)
- - [extract_molecule_corefs_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L373)
+ - [extract_molecules_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L304)
+ - [extract_reactions_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L458)
+ - [extract_molecule_bboxes_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L280)
+ - [extract_molecule_corefs_from_figures](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L374)
 
 ```python
 import torch
@@ -268,8 +360,8 @@ The output format for these methods are largely the same as their corresponding 
 
 ### Extracting Figures and Tables From PDFs
 These are helper methods for extracting just tables or figures without performing further analysis on them.
- - [extract_figures_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L165)
- - [extract_tables_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L205)
+ - [extract_figures_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L166)
+ - [extract_tables_from_pdf](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L206)
 
 ```python
 import torch
@@ -285,7 +377,10 @@ Output format when extracting figures
 ```
 [
     {   # first figure
-        'title': str,
+        'title': {
+            'text': str,
+            'bbox': list in form [x1, y1, x2, y2],
+        },
         'figure': {
             'image': PIL image or None,
             'bbox': list in form [x1, y1, x2, y2],
@@ -308,7 +403,10 @@ Output format when extracting tables
 ```
 [
     { # first table
-        'title': str,
+        'title': {
+            'text': str,
+            'bbox': list in form [x1, y1, x2, y2],
+        },
         'figure': {
             'image': PIL image or None,
             'bbox': list in form [x1, y1, x2, y2] or empty list,
@@ -328,7 +426,7 @@ Output format when extracting tables
 ```
 
 ## Data
-Data for evaluating the process of R group resolution is found at this [huggingface repository](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main). The huggingface repository contains every diagram in the dataset [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_diagrams.zip) as well as groundtruth annotations [here]( https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_data.json).
+Data for evaluating the process of R-group resolution is found at this [HuggingFace repository](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/tree/main). The HuggingFace repository contains every diagram in the dataset [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_diagrams.zip) as well as groundtruth annotations [here]( https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_resolution_data.json).
 
 The annotations take the following format: 
 ```python
@@ -361,9 +459,9 @@ The annotations take the following format:
 ]
 ```
 
-Additionally, jupyter notebooks used during the annotation process can be downloaded [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_annotation_notebooks.zip). 
+Additionally, Jupyter notebooks used during the annotation process can be downloaded [here](https://huggingface.co/datasets/Ozymandias314/OpenChemIEData/blob/main/r_group_annotation_notebooks.zip). 
 
-Diagrams and data used in the comparison against Reaxys can also be found in the same huggingface repository. 
+Diagrams and data used in the comparison against Reaxys can also be found in the same HuggingFace repository. 
 
 ### Loading Custom Model Checkpoints
 [Init methods for models](https://github.com/CrystalEye42/OpenChemIE/blob/main/openchemie/interface.py#L35)
