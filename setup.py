@@ -20,14 +20,15 @@ setup(
             "opencv-python==4.5.5.64",
             "opencv-python-headless==4.5.4.60",
             "Pillow==9.5.0",
+            "ipython",
             "RxnScribe @ git+https://github.com/Ozymandias314/MolDetect.git",
-            "MolScribe",
+            "MolScribe @ git+https://github.com/CrystalEye42/MolScribe.git@250f683",
             "ChemIENER @ git+https://github.com/Ozymandias314/ChemIENER.git",
             "chemrxnextractor @ git+https://github.com/CrystalEye42/ChemRxnExtractor.git@0f9529d",
             ],
         dependency_links=[
             "git+https://github.com/Ozymandias314/MolDetect.git",
-            "git+https://github.com/CrystalEye42/MolScribe.git@1f2e30e",
+            "git+https://github.com/CrystalEye42/MolScribe.git@250f683",
             "git+https://github.com/jiangfeng1124/ChemRxnExtractor.git",
         ])
 
