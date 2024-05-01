@@ -81,9 +81,8 @@ class OpenChemIE:
         Parameters:
             ckpt_path: path to checkpoint to use, if None then will use default
         """
-        if ckpt_path is None:
-            ckpt_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
-        self._pdfparser = lp.AutoLayoutModel(ckpt_path, device=self.device.type)
+        config_path = "lp://efficientdet/PubLayNet/tf_efficientdet_d1"
+        self._pdfparser = lp.AutoLayoutModel(config_path, model_path=ckpt_path, device=self.device.type)
     
 
     @property
