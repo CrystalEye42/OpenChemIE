@@ -486,7 +486,7 @@ model.init_molscribe(ckpt_path)
   - Paper: https://pubs.acs.org/doi/10.1021/acs.jcim.3c00439
   - Code: https://github.com/thomas0809/rxnscribe
   - Demo: https://huggingface.co/spaces/yujieq/RxnScribe
-- MolDet and MolCoref
+- MolDetect and MolCoref
   - An image-to-sequence generation model for identifying molecule bounding boxes, or for resolving coreferences between labels and molecules
   - Code: https://github.com/Ozymandias314/MolDetect/tree/main
 - ChemNER
