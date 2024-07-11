@@ -300,9 +300,9 @@ The output has the following format
             },
             # More bounding boxes
         ],
-        'coref': [
-            ([0, 1], "4a"), #coreferences contain the indices of the molecule and identifier bounding boxes, as well as the string representation of the identifier
-            ([3, 4], "4b"),
+        'corefs': [
+            [0, 1],  # molecule bounding box index, identifier bounding box index
+            [3, 4],
             # More coref pairs
         ],
         'page': int
