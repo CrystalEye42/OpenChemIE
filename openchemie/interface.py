@@ -353,8 +353,8 @@ class OpenChemIE:
                         },
                         # More bounding boxes
                     ],
-                    'coref': [
-                        [0, 1],
+                    'corefs': [
+                        [0, 1],  # molecule bbox index, identifier bbox index
                         [3, 4],
                         # More coref pairs
                     ],
@@ -389,8 +389,8 @@ class OpenChemIE:
                         },
                         # More bounding boxes
                     ],
-                    'coref': [
-                        [0, 1],
+                    'corefs': [
+                        [0, 1],  # molecule bbox index, identifier bbox index
                         [3, 4],
                         # More coref pairs
                     ],
