@@ -1,0 +1,6 @@
+{
+  "reactants": "CN(C)CCCl.OC(c1ccccc1)c1ccccc1",
+  "training_set": "pistachio",
+  "threshold": 0.2,
+  "inspector": "Reaxys inspector"
+}

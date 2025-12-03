@@ -1,0 +1,9 @@
+{
+  "smiles": [
+    "CS(=N)(=O)Cc1cccc(Br)c1",
+    "CN(C)CCOC(c1ccccc1)c1ccccc1"
+  ],
+  "threshold": 0.3,
+  "top_k": 10,
+  "reaction_set": "USPTO_FULL"
+}

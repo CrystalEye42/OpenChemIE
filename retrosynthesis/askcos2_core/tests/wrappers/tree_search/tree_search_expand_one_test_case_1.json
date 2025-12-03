@@ -1,0 +1,32 @@
+{
+  "smiles": "CN(C)CCOC(c1ccccc1)c1ccccc1",
+  "retro_backend_options": [
+    {
+      "retro_backend": "template_relevance",
+      "retro_model_name": "reaxys",
+      "max_num_templates": 1000,
+      "max_cum_prob": 0.995,
+      "attribute_filter": [],
+      "threshold": 0.3,
+      "top_k": 10
+    }
+  ],
+  "banned_chemicals": [],
+  "banned_reactions": [],
+  "use_fast_filter": true,
+  "fast_filter_threshold": 0.75,
+  "retro_rerank_backend": "relevance_heuristic",
+  "cluster_precursors": false,
+  "cluster_setting": {
+    "feature": "original",
+    "cluster_method": "hdbscan",
+    "fp_type": "morgan",
+    "fp_length": 512,
+    "fp_radius": 1,
+    "classification_threshold": 0.2
+  },
+  "extract_template": false,
+  "return_reacting_atoms": true,
+  "selectivity_check": false,
+  "group_by_strategy": false
+}

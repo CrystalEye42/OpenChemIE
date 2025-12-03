@@ -1,0 +1,8 @@
+{
+  "original": "CN(C)CCOC(c1ccccc1)c1ccccc1",
+  "outcomes": [
+    "OC(c1ccccc1)c1ccccc1.CN(C)CCCl",
+    "ClC(c1ccccc1)c1ccccc1.CN(C)CCO",
+    "O=C(c1ccccc1)c1ccccc1.CN(C)CCO"
+  ]
+}

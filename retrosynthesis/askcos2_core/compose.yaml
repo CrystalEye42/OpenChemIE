@@ -1,0 +1,141 @@
+services:
+  web:
+    image: registry.gitlab.com/mlpds_mit/askcosv2/askcos-vue-nginx:2.0
+    restart: always
+    network_mode: host
+    volumes:
+      - './nginx.conf:/etc/nginx/nginx.conf'
+      - './askcos.ssl.cert:/etc/ssl/certs/askcos.ssl.cert'
+      - './askcos.ssl.key:/etc/ssl/private/askcos.ssl.key'
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+      - celery_workers
+
+  app:
+    image: ${ASKCOS_REGISTRY}/app:2.0
+    hostname: app
+    restart: always
+    env_file:
+      - .env
+    network_mode: host
+    volumes:
+      - "askcosv2_precompute:/ASKCOSv2/askcos2_core/data/precompute"
+      - "./data/db:/usr/local/askcos-data/db"
+    depends_on:
+      - mongo
+
+  precompute:
+    image: ${ASKCOS_REGISTRY}/precompute:2.0
+    tty: true
+    hostname: precompute
+    restart: always
+    env_file:
+      - .env
+    network_mode: host
+    volumes:
+      - "askcosv2_precompute:/ASKCOSv2/askcos2_core/data/precompute"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6.0.9-jammy
+    hostname: mongo
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${MONGO_PORT}:${MONGO_PORT}"
+    volumes:
+      - "askcosv2_mongo_data:/data/db"
+      - "./data/db:/usr/local/askcos-data/db"
+    command: --wiredTigerCacheSizeGB 1.5
+
+  rabbitmq:
+    image: rabbitmq:3.11-alpine
+    hostname: rabbitmq
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+
+  redis:
+    image: redis:7.0-alpine
+    hostname: redis
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${REDIS_PORT}:${REDIS_PORT}"
+    volumes:
+      - "askcosv2_redisdata:/data"
+    command: redis-server --port ${REDIS_PORT}
+
+  celery_workers:
+    image: ${ASKCOS_REGISTRY}/celery:2.0
+    restart: always
+    env_file:
+      - .env
+    network_mode: host
+    volumes:
+      - "askcosv2_precompute:/ASKCOSv2/askcos2_core/data/precompute"
+    depends_on:
+      - rabbitmq
+      - redis
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    hostname: keycloak
+    restart: always
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-localhost}
+      KC_HOSTNAME_PORT: 8443
+      KC_HTTP_ENABLED: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "true"
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/certs/askcos.ssl.cert
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/certs/askcos.ssl.key
+      KC_HTTPS_PORT: 8443
+    ports:
+      - "8443:8443"
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    command: start-dev --https-certificate-file=/opt/keycloak/certs/askcos.ssl.cert --https-certificate-key-file=/opt/keycloak/certs/askcos.ssl.key
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./askcos.ssl.cert:/opt/keycloak/certs/askcos.ssl.cert:ro
+      - ./askcos.ssl.key:/opt/keycloak/certs/askcos.ssl.key:ro
+
+  keycloak-db:
+    image: postgres:15-alpine
+    hostname: keycloak-db
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak123}
+    ports:
+      - "5433:5432"
+    volumes:
+      - keycloak_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  askcosv2_redisdata:
+  askcosv2_mongo_data:
+  askcosv2_precompute:
+  keycloak_data:
+  keycloak_db_data:

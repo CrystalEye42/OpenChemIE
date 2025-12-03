@@ -1,0 +1,10 @@
+{
+  "model_name": "reaxys",
+  "smiles": [
+    "CS(=N)(=O)Cc1cccc(Br)c1",
+    "CN(C)CCOC(c1ccccc1)c1ccccc1"
+  ],
+  "max_num_templates": 1000,
+  "max_cum_prob": 0.995,
+  "attribute_filter": []
+}

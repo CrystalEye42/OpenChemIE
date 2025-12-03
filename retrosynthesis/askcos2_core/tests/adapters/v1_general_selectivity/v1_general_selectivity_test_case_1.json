@@ -1,0 +1,10 @@
+{
+  "reactants": "CC(C)(C)OC(=O)c1ccc(Cl)nc1Cl.CC(C)COc1cc[nH]n1",
+  "product": "CC(C)COc1ccn(-c2ccc(C(=O)OC(C)(C)C)c(Cl)n2)n1",
+  "mapped": false,
+  "mapper": "Transformer",
+  "all_outcomes": false,
+  "verbose": true,
+  "no_map_reagents": true,
+  "mode": "GNN"
+}

@@ -1,0 +1,14 @@
+*__pycache__*
+.DS_Store
+.idea/
+deployment/
+data/
+*.sif
+*.out
+configs/module_config_w_optimizer.py
+
+.env
+
+askcos.ssl.cert
+askcos.ssl.key
+nginx.conf

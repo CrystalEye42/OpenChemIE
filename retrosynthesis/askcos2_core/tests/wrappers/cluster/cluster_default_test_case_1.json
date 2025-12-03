@@ -1,0 +1,5 @@
+{
+  "original": "CC(=O)c1ccc2c(ccn2C(=O)OC(C)(C)C)c1",
+  "outcomes": ["CC(=O)c1ccc2[nH]ccc2c1.CC(C)(C)OC(=O)OC(=O)OC(C)(C)C", "CC(=O)Cl.CC(C)(C)OC(=O)n1ccc2ccccc21", "CON(C)C(=O)c1ccc2c(ccn2C(=O)OC(C)(C)C)c1.C[Mg+]", "CC(C)(C)OC(=O)n1ccc2cc(Br)ccc21.CON(C)C(C)=O", "CC(O)c1ccc2c(ccn2C(=O)OC(C)(C)C)c1", "CC(O)c1ccc2c(ccn2C(=O)OC(C)(C)C)c1", "CC(=O)OC(C)=O.CC(C)(C)OC(=O)n1ccc2ccccc21", "CC(=O)Cl.CC(C)(C)OC(=O)n1ccc2cc(Br)ccc21"],
+  "cluster_method": "kmeans"
+}

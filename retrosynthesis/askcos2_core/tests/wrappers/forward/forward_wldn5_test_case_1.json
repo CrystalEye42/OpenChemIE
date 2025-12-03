@@ -1,0 +1,8 @@
+{
+  "model_name": "pistachio",
+  "reactants": [
+    "CS(=N)(=O)Cc1cccc(Br)c1.Nc1cc(Br)ccn1",
+    "CCO.CC(=O)O"
+  ],
+  "contexts": []
+}

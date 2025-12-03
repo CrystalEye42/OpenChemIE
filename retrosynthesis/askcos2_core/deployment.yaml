@@ -1,0 +1,23 @@
+docker:
+  app:
+    image: ${ASKCOS_REGISTRY}/app:2.0
+    build: docker build -f Dockerfile_app -t ${ASKCOS_REGISTRY}/app:2.0 .
+    start: docker compose -f compose.yaml up -d app
+  celery:
+    image: ${ASKCOS_REGISTRY}/celery:2.0
+    build: docker build -f Dockerfile_celery -t ${ASKCOS_REGISTRY}/celery:2.0 .
+    start: docker compose -f compose.yaml up -d celery_workers
+  precompute:
+    image: ${ASKCOS_REGISTRY}/precompute:2.0
+    build: docker build -f Dockerfile_precompute -t ${ASKCOS_REGISTRY}/precompute:2.0 .
+    start: docker compose -f compose.yaml up -d precompute
+
+singularity:
+  cpu:
+    image: askcos2_core_cpu.sif
+    build: singularity build -f askcos2_core_cpu.sif singularity_cpu.def
+    start: sh scripts/start_app_in_singularity.sh
+
+commands:
+  stop-docker: docker compose -f compose.yaml down
+  stop-singularity: singularity instance stop askcos2_core

@@ -1,0 +1,8 @@
+{
+  "backend": "gnn",
+  "smiles": "CC(COc1n[nH]cc1)C.CC(C)(OC(c1c(Cl)nc(Cl)cc1)=O)C>>CC(OC(c1ccc(n2ccc(OCC(C)C)n2)nc1Cl)=O)(C)C",
+  "atom_map_backend": "wln",
+  "mapped": false,
+  "all_outcomes": false,
+  "no_map_reagents": true
+}
